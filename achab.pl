@@ -2,8 +2,8 @@
 
 ##### vcfToExcel.pl ####
 
-# Auteur : Thomas Guignard 2016
-# USAGE : vcfToExcel.pl --vcf <vcf_file> --cas <index_sample_name> --pere <father_sample_name> --mere <mother_sample_name> --control <control_sample_name>  --output <txt_file> --caller <freebayes|GATK> --trio <YES|NO> --candidats <file with gene symbol of interest>  --geneSummary <file with format geneSymbol\tsummary>  --pLIFile <file containing gene symbol and pLI from ExAC database> --annotation <annovar|seattleseq> --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>
+# Auteur : Thomas Guignard 2018
+# USAGE : achab.pl --vcf <vcf_file> --cas <index_sample_name> --pere <father_sample_name> --mere <mother_sample_name> --control <control_sample_name>  --output <txt_file> --caller <freebayes|GATK> --trio <YES|NO> --candidats <file with gene symbol of interest>  --geneSummary <file with format geneSymbol\tsummary>  --pLIFile <file containing gene symbol and pLI from ExAC database> --annotation <annovar|seattleseq> --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>
 #
 #ExAC pLI datas ftp://ftp.broadinstitute.org/pub/ExAC_release/release1/functional_gene_constraint/
 
