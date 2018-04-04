@@ -14,7 +14,29 @@ See [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/).
 
 ### Get custom annotations
 
-To get unavailable annotations in ANNOVAR database into our vcf, we are going to add missense Z-score from ExAC and OMIM database into the gene_fullxref.txt 
+To get unavailable annotations in ANNOVAR database into our vcf, we are going to add missense Z-score from ExAC and OMIM database into the gene_fullxref.txt from ANNOVAR.
+
+#### Missense Z-score 
+
+First download the database from ExAc (ftp.broadinstitute.org).
+
+```bash
+wget ftp://ftp.broadinstitute.org/pub/ExAC_release/release0.3.1/functional_gene_constraint/fordist_cleaned_exac_r03_march16_z_pli_rec_null_data.txt
+```
+Choose only columns neededs
+
+```bash
+cut -f2,18 fordist_cleaned_exac_r03_march16_z_pli_rec_null_data.txt > missense_zscore.txt
+vim missense_zscore.txt ## change header "gene" to "#Gene_name" to allow recognition by pandas
+```
+
+#### OMIM 
+
+According to use OMIM license, download the gene2map.txt at https://www.omim.org/downloads/
+
+```bash
+
+```
 
 ### Annovar annotation 
 
