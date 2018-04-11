@@ -53,7 +53,7 @@ import pandas
 
 fullxref = pandas.read_table('gene_fullxref.txt') 
 omim = pandas.read_table('omim.2018-04.tsv')
-zscore = pandas.read_table('missense_zscore.txt)
+zscore = pandas.read_table('missense_zscore.txt')
 
 merge = pandas.merge(fullxref,omim, on="#Gene_name", how="left", left_index=True)
 mergeFinal = pandas.merge(merge,zscore, on="#Gene_name", how="left", left_index=True)
@@ -65,6 +65,7 @@ Cut the first column created by pandas and the gene_customfullxref.txt is ready 
 
 ```bash
 cut -f2- gene_customfullxref_tmp.txt > gene_customfullxref.txt
+rm gene_customfullxref_tmp.txt 
 ```
 
 ### Annovar annotation 
@@ -86,5 +87,5 @@ python MPA.py -i name.hg19_multianno.vcf -o name.hg19_multianno_MPA.vcf
 
 ### Library
 
+Python library : pandas and dependencies (only tested with python 2.7)
 Perl library : cpan ...
-Python library : pandas 
