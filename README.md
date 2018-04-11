@@ -9,8 +9,8 @@ This is the end of excel table with so much columns ! All necessary information 
 
 ## Input 
 
-A vcf annotated by ANNOVAR with MPA annotations. 
-See [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/).
+A vcf annotated by ANNOVAR with MPA annotations and Phenolyzer predictions. 
+See [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/) and [Phenolyzer](https://github.com/WGLab/phenolyzer).
 
 ### Get custom annotations
 
@@ -70,22 +70,46 @@ rm gene_customfullxref_tmp.txt
 
 ### Annovar annotation 
 
-Command line 
+A tutorial to install ANNOVAR and more informations are available at : [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/)
+
+Command line for vcf annotation by ANNOVAR with needed databases. 
 
 ```bash
-perl path/to/table_annovar.pl path/to/example.vcf humandb/ -buildver hg19 -out path/to/output/name -remove -protocol refGene,refGene,clinvar_20170130,dbnsfp33a,spidex,dbscsnv11,gnomad_exome,gnomad_genome -operation gx,g,f,f,f,f,f,f -nastring . -vcfinput -otherinfo -arg '-splicing 20','-hgvs',,,,,, -xref example/gene_customfullxref.txt
+perl path/to/table_annovar.pl path/to/example.vcf humandb/ -buildver hg19 -out path/to/output/name -remove -protocol refGene,refGene,clinvar_20170905,dbnsfp33a,spidex,dbscsnv11,gnomad_exome,gnomad_genome,intervar_20180118 -operation gx,g,f,f,f,f,f,f,f -nastring . -vcfinput -otherinfo -arg '-splicing 20','-hgvs',,,,,,, -xref example/gene_customfullxref.txt
+```
+
+### Phenolyzer annotation 
+
+Tutorial to install Phenolyzer is available at [Phenolyzer](https://github.com/WGLab/phenolyzer). 
+
+Installation 
+```bash
+git clone https://github.com/WGLab/phenolyzer
+```
+
+Command line 
+```bash
+perl disease_annotation.pl disease -f -p -ph -logistic -out disease/out
 ```
 
 ### MPA annotation
 
+See installation and more informations about MPA at [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/).
+
+```bash
+git clone https://github.com/mobidic/MPA.git
+```
+
+Command line for annotated vcf by ANNOVAR with MPA scores. 
+
 ```bash
 python MPA.py -i name.hg19_multianno.vcf -o name.hg19_multianno_MPA.vcf
 ```
-
 
 ## Requirements
 
 ### Library
 
 Python library : pandas and dependencies (only tested with python 2.7)
-Perl library : cpan ...
+Perl library : BioPerl 
+cpan ...
