@@ -52,7 +52,7 @@ Use the merge function from pandas module to merge gene_fullxref.txt with OMIM a
 import pandas
 
 fullxref = pandas.read_table('gene_fullxref.txt') 
-omim = pandas.read_table('omim.2018-04.tsv')
+omim = pandas.read_table('omim.tsv')
 zscore = pandas.read_table('missense_zscore.txt')
 
 merge = pandas.merge(fullxref,omim, on="#Gene_name", how="left", left_index=True)
