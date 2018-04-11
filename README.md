@@ -96,20 +96,30 @@ python MPA.py -i name.hg19_multianno.vcf -o name.hg19_multianno_MPA.vcf
 
 Tutorial to install Phenolyzer is available at [Phenolyzer](https://github.com/WGLab/phenolyzer). 
 
-Installation 
+Installation (need Bioperl and Graph, easy to install with cpanm)
 ```bash
 git clone https://github.com/WGLab/phenolyzer
 ```
 
-Command line 
+Create a disease file where you can add your phenotypes (one line per phenotype).
+
 ```bash
-perl disease_annotation.pl disease -f -p -ph -logistic -out disease/out
+vim disease.txt
 ```
+
+Command line to get predictions for Phenolyzer and the out.predicted_gene_scores.
+
+```bash
+perl disease_annotation.pl disease.txt -f -p -ph -logistic -out disease/out
+```
+
+## Captain ACHAB Command
+
+
 
 ## Requirements
 
 ### Library
 
 Python library : pandas and dependencies (only tested with python 2.7)
-Perl library : BioPerl 
-cpan ...
+Perl library : BioPerl, Graph
