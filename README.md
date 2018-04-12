@@ -5,7 +5,7 @@
 ## Overview
 
 Captain ACHAB is a simple and useful interface to analysis of WES data for molecular diagnosis.
-This is the end of excel table with so much columns ! All necessary information is available in one look.
+This is the end of excel table with so many columns ! All necessary information is available in one look.
 
 ## Input 
 
@@ -115,7 +115,7 @@ perl disease_annotation.pl disease.txt -f -p -ph -logistic -out disease/out
 
 ## Captain ACHAB Command
 
-Installation (need Switch, easy to install with cpanm)
+Installation (need Switch, Excel::Writer::XLSX, easy to install with cpanm)
 
 ```bash
 https://github.com/mobidic/Captain-ACHAB.git
@@ -123,6 +123,9 @@ https://github.com/mobidic/Captain-ACHAB.git
 
 Command line to use Captain ACHAB 
 
+```
+# USAGE : perl achab.pl --vcf <vcf_file> --cas <index_sample_name> --pere <father_sample_name> --mere <mother_sample_name> --control <control_sample_name>  --caller <freebayes|GATK> --trio <YES|NO> --candidats <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqMax <allelic frequency threshold from 0 to 1 default=0.02>  --customInfo  <info name (will be added in a new column)>
+```
 
 ## Requirements
 
@@ -130,5 +133,6 @@ Command line to use Captain ACHAB
 
 Python library : pandas and dependencies (only tested with python 2.7)
 
-Perl library via cpanm : BioPerl, Graph, Switch
+Perl library via cpanm : BioPerl, Graph, Switch, Excel::Writer::XLSX
+
 
