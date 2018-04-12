@@ -61,10 +61,10 @@ mergeFinal = pandas.merge(merge,zscore, on="#Gene_name", how="left", left_index=
 mergeFinal.to_csv('gene_customfullxref_tmp.txt',sep='\t')
 ```
 
-Cut the first column created by pandas and the gene_customfullxref.txt is ready to be use in ANNOVAR.
+Cut the first column created by pandas and the gene_customfullxref.txt is ready to be use in ANNOVAR. sed and awk command are used to replace some characters not compatible for regex in ANNOVAR. 
 
 ```bash
-cut -f2- gene_customfullxref_tmp.txt | sed 's/+/plus/g' | sed 's/n-/n /g' | sed 's/(congenital with brain and eye anomalies,/(congenital with brain and eye anomalies),/g' > gene_customfullxref.txt
+cut -f2- gene_customfullxref_tmp.txt | sed 's/+/plus/g' | awk 'BEGIN{FS=OFS="\t"} {for (i=6;i<=7;i++) gsub(/-/,"_",$i)}1' | awk 'BEGIN{FS=OFS="\t"} {for (i=$(NF-2);i<=$(NF-1);i++) gsub(/-/,"_",$i)}1' | sed 's/(congenital with brain and eye anomalies,/(congenital with brain and eye anomalies),/g' > gene_customfullxref.txt
 rm gene_customfullxref_tmp.txt 
 ```
 
