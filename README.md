@@ -115,6 +115,13 @@ perl disease_annotation.pl disease.txt -f -p -ph -logistic -out disease/out
 
 ## Captain ACHAB Command
 
+Installation (need Switch, easy to install with cpanm)
+
+```bash
+https://github.com/mobidic/Captain-ACHAB.git
+```
+
+Command line to use Captain ACHAB 
 
 
 ## Requirements
@@ -122,4 +129,6 @@ perl disease_annotation.pl disease.txt -f -p -ph -logistic -out disease/out
 ### Library
 
 Python library : pandas and dependencies (only tested with python 2.7)
-Perl library : BioPerl, Graph
+
+Perl library via cpanm : BioPerl, Graph, Switch
+
