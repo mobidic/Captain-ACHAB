@@ -64,7 +64,7 @@ mergeFinal.to_csv('gene_customfullxref_tmp.txt',sep='\t')
 Cut the first column created by pandas and the gene_customfullxref.txt is ready to be use in ANNOVAR.
 
 ```bash
-cut -f2- gene_customfullxref_tmp.txt > gene_customfullxref.txt
+cut -f2- gene_customfullxref_tmp.txt | sed 's/+/plus/g' > gene_customfullxref.txt
 rm gene_customfullxref_tmp.txt 
 ```
 
