@@ -1,14 +1,13 @@
 #!/usr/bin/perl
 
-##### vcfToExcel.pl ####
+##### achab.pl ####
 
 # Auteur : Thomas Guignard 2018
-# USAGE : achab.pl --vcf <vcf_file> --cas <index_sample_name> --pere <father_sample_name> --mere <mother_sample_name> --control <control_sample_name>  --output <txt_file> --caller <freebayes|GATK> --trio <YES|NO> --candidats <file with gene symbol of interest>  --geneSummary <file with format geneSymbol\tsummary>  --pLIFile <file containing gene symbol and pLI from ExAC database> --annotation <annovar|seattleseq> --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>
+# USAGE : achab.pl --vcf <vcf_file> --cas <index_sample_name> --pere <father_sample_name> --mere <mother_sample_name> --control <control_sample_name>  --caller <freebayes|GATK> --trio <YES|NO> --candidats <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqMax <allelic frequency threshold from 0 to 1 default=0.02>  --customInfo  <info name (will be added in a new column)>
 #
-#ExAC pLI datas ftp://ftp.broadinstitute.org/pub/ExAC_release/release1/functional_gene_constraint/
 
 # Description : 
-# Create an User friendly Excel file from an annotated VCF file. 
+# Create an User friendly Excel file from an MPA annotated VCF file. 
 
 # Version : 
 # v1.0.0 20161020 Initial Implementation 
@@ -23,7 +22,7 @@ use Pod::Usage;
 use List::Util qw(first);
 use Excel::Writer::XLSX;
 use Data::Dumper;
-
+use Switch;
 
 #parameters
 my $man = 0;
@@ -37,11 +36,11 @@ my $control = "";
 my $pere = "";
 my $caller = "";
 my $trio = "";
-
+my $popFreqMax = "";
 
 #stuff for files
 my $candidates = "";
-my @candidatesList;
+my %candidateGene;
 my $candidates_line;
 
 my $geneSummary="";
@@ -59,14 +58,15 @@ my $phenolyzer_Line;
 my @phenolyzer_List;
 my %phenolyzerGene;
 
+my $customInfo = "";
+
 #vcf parsing and output
 my @line;
-#my @unorderedLine;
-my @orderedLine;
+my $variantID; 
 
 my @finalSortData;
 my $familyGenotype;		
-
+my %hashFinalSortData;
 	
 my $nbrSample = 0;
 my $indexPere = 0;
@@ -80,7 +80,6 @@ my $annotation = "";
 #$arguments = GetOptions( "vcf=s" => \$incfile ) or pod2usage(-vcf => "$0: argument required\n") ;
 
 GetOptions( 	"vcf=s"				=> \$incfile,
-			 	"output=s"			=> \$outfile,
 				"cas=s"				=> \$cas,
 				"pere=s"			=> \$pere, 
 				"mere=s"			=> \$mere, 
@@ -90,15 +89,20 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 				"candidats=s"		=> \$candidates,
 				"geneSummary=s"		=> \$geneSummary,
 				"pLIFile=s"			=> \$pLIFile,
-				"annotation=s"		=> \$annotation,
 				"phenolyzerFile=s"	=> \$phenolyzerFile,
+				"popFreqMax=s"		=> \$popFreqMax, 
+				"customInfo=s"		=> \$customInfo, 
 				"man"				=> \$man,
 				"help"				=> \$help);
 				
 
 #check mandatory arguments
 
-
+			#define popFreqMax
+if( $popFreqMax eq ""){
+	$popFreqMax = 0.01;
+	
+}
 
 			 
 print  STDERR "Processing vcf file ... \n" ; 
@@ -255,7 +259,7 @@ if($candidates ne ""){
 	while( <CANDIDATS> ){
 	  	$candidates_line = $_;
 		chomp $candidates_line;
-		push @candidatesList, $candidates_line;
+		$candidateGene{$candidates_line} = 1;
 
 				
 	}
@@ -267,36 +271,36 @@ if($candidates ne ""){
 
 
 #create dico of functions for SNV and indel
-my %dicoFonction;
-$dicoFonction{"coding-unknown"} = 0 ;
-$dicoFonction{"coding-unknown-near-splice"} = 0 ;
-$dicoFonction{"missense"} = 0 ;
-$dicoFonction{"missense-near-splice"} = 0 ;
-$dicoFonction{"splice-acceptor"} = 0 ;
-$dicoFonction{"splice-donor"} = 0 ;
-$dicoFonction{"stop-gained"} = 0 ;
-$dicoFonction{"stop-gained-near-splice"} = 0 ;
-$dicoFonction{"stop-lost"} = 0 ;
-$dicoFonction{"stop-lost-near-splice"} = 0 ;
-$dicoFonction{"coding"} = 0 ;
-$dicoFonction{"coding-near-splice"} = 0 ;
-$dicoFonction{"codingComplex"} = 0 ;
-$dicoFonction{"codingComplex-near-splice"} = 0 ;
-$dicoFonction{"frameshift"} = 0 ;
-$dicoFonction{"synonymous-near-splice"} = 0 ;
-$dicoFonction{"intron-near-splice"} = 0 ;
-$dicoFonction{"frameshift-near-splice"} = 0 ;
-
-
-if($annotation eq "annovar"){
-	# evaluate and check if function need to be kept with nsssi
-}
+#my %dicoFonction;
+#$dicoFonction{"coding-unknown"} = 0 ;
+#$dicoFonction{"coding-unknown-near-splice"} = 0 ;
+#$dicoFonction{"missense"} = 0 ;
+#$dicoFonction{"missense-near-splice"} = 0 ;
+#$dicoFonction{"splice-acceptor"} = 0 ;
+#$dicoFonction{"splice-donor"} = 0 ;
+#$dicoFonction{"stop-gained"} = 0 ;
+#$dicoFonction{"stop-gained-near-splice"} = 0 ;
+#$dicoFonction{"stop-lost"} = 0 ;
+#$dicoFonction{"stop-lost-near-splice"} = 0 ;
+#$dicoFonction{"coding"} = 0 ;
+#$dicoFonction{"coding-near-splice"} = 0 ;
+#$dicoFonction{"codingComplex"} = 0 ;
+#$dicoFonction{"codingComplex-near-splice"} = 0 ;
+#$dicoFonction{"frameshift"} = 0 ;
+#$dicoFonction{"synonymous-near-splice"} = 0 ;
+#$dicoFonction{"intron-near-splice"} = 0 ;
+#$dicoFonction{"frameshift-near-splice"} = 0 ;
 
 
 
 
-#List of ACMG incidentalome genes
-my @ACMGlist = ("ACTA2","ACTC1","APC","APOB","ATP7B","BMPR1A","BRCA1","BRCA2","CACNA1S","COL3A1","DSC2","DSG2","DSP","FBN1","GLA","KCNH2","KCNQ1","LDLR","LMNA","MEN1","MLH1","MSH2","MSH6","MUTYH","MYBPC3","MYH11","MYH7","MYL2","MYL3","NF2","OTC","PCSK9","PKP2","PMS2","PRKAG2","PTEN","RB1","RET","RYR1","RYR2","SCN5A","SDHAF2","SDHB","SDHC","SDHD","SMAD3","SMAD4","STK11","TGFBR1","TGFBR2","TMEM43","TNNI3","TNNT2","TP53","TPM1","TSC1","TSC2","VHL","WT1");
+
+#Hash of ACMG incidentalome genes
+#my @ACMGlist = ("ACTA2","ACTC1","APC","APOB","ATP7B","BMPR1A","BRCA1","BRCA2","CACNA1S","COL3A1","DSC2","DSG2","DSP","FBN1","GLA","KCNH2","KCNQ1","LDLR","LMNA","MEN1","MLH1","MSH2","MSH6","MUTYH","MYBPC3","MYH11","MYH7","MYL2","MYL3","NF2","OTC","PCSK9","PKP2","PMS2","PRKAG2","PTEN","RB1","RET","RYR1","RYR2","SCN5A","SDHAF2","SDHB","SDHC","SDHD","SMAD3","SMAD4","STK11","TGFBR1","TGFBR2","TMEM43","TNNI3","TNNT2","TP53","TPM1","TSC1","TSC2","VHL","WT1");
+my %ACMGgene = ("ACTA2" =>1,"ACTC1" =>1,"APC" =>1,"APOB" =>1,"ATP7B" =>1,"BMPR1A" =>1,"BRCA1" =>1,"BRCA2" =>1,"CACNA1S" =>1,"COL3A1" =>1,"DSC2" =>1,"DSG2" =>1,"DSP" =>1,"FBN1" =>1,"GLA" =>1,"KCNH2" =>1,"KCNQ1" =>1,"LDLR" =>1,"LMNA" =>1,"MEN1" =>1,"MLH1" =>1,"MSH2" =>1,"MSH6" =>1,"MUTYH" =>1,"MYBPC3" =>1,"MYH11" =>1,"MYH7" =>1,"MYL2" =>1,"MYL3" =>1,"NF2" =>1,"OTC" =>1,"PCSK9" =>1,"PKP2" =>1,"PMS2" =>1,"PRKAG2" =>1,"PTEN" =>1,"RB1" =>1,"RET" =>1,"RYR1" =>1,"RYR2" =>1,"SCN5A" =>1,"SDHAF2" =>1,"SDHB" =>1,"SDHC" =>1,"SDHD" =>1,"SMAD3" =>1,"SMAD4" =>1,"STK11" =>1,"TGFBR1" =>1,"TGFBR2" =>1,"TMEM43" =>1,"TNNI3" =>1,"TNNT2" =>1,"TP53" =>1,"TPM1" =>1,"TSC1" =>1,"TSC2" =>1,"VHL" =>1,"WT1"=>1);
+
+
+
                   
 #empty line to erase false HTZ composite lines
 my @emptyArray = (" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "); 
@@ -390,78 +394,11 @@ close(VCF);
 
 
 
-#DEBUG
 
 
 #counter for shifting columns according to nbr of sample
 my $cmpt = 0;
 
-##create Dico of sorted columns for a userfriendly output
-#my %dicoOrderColumns;
-
-
-#$dicoOrderColumns{1 }{'colName'} = $dicoParam{"MPA_ranking"} ;
-#$dicoOrderColumns{2 }{'colName'} = $dicoParam{"Gene.refGene"};
-#$dicoOrderColumns{3 }{'colName'} = $dicoParam{"CLNDB-Phenotypes"} ;
-#$dicoOrderColumns{4 }{'colName'} = $dicoParam{"CLN-Disease_description"};
-#$dicoOrderColumns{5 }{'colName'} = $dicoParam{"MIM Number"};
-#$dicoOrderColumns{6 }{'colName'} = $dicoParam{"gnomAD_genome_ALL"};
-#$dicoOrderColumns{7 }{'colName'} = $dicoParam{"gnomAD_exome_ALL"} ;
-#$dicoOrderColumns{8 }{'colName'} = $dicoParam{"CLINSIG"} ;
-#$dicoOrderColumns{9 }{'colName'} = $dicoParam{"SecondHit-CNV"} ;
-#$dicoOrderColumns{10}{'colName'} = $dicoParam{"Func.refGene"} ;
-#$dicoOrderColumns{11}{'colName'} = $dicoParam{"ExonicFunc.refGene"} ;
-#$dicoOrderColumns{12}{'colName'} = $dicoParam{"AAChange.refGene"} ;
-#$dicoOrderColumns{13}{'colName'} = $dicoParam{"GeneDetail.refGene"} ;
-#$dicoOrderColumns{14}{'colName'} = "Genotype-".$cas ;
-#if($pere ne "" && $mere ne "" && $control ne ""){
-#	$cmpt = 4;
-#	
-#	$dicoOrderColumns{15}{'colName'} = "Genotype-".$pere;
-#	$dicoOrderColumns{16}{'colName'} = "Genotype-".$mere ;
-#	$dicoOrderColumns{17}{'colName'} = "Genotype-".$control ;
-#	
-#
-#
-#}else{
-#	if( $mere ne "" && $pere ne ""){
-#		$cmpt = 3;
-#		
-#		$dicoOrderColumns{15}{'colName'} = "Genotype-".$pere ;
-#		$dicoOrderColumns{16}{'colName'} = "Genotype-".$mere ;
-#
-#	}else{
-#		if( $pere ne ""){
-#			$cmpt = 2;
-#			$dicoOrderColumns{15}{'colName'} = "Genotype-".$pere ;
-#		}
-#		if( $mere ne ""){
-#			$cmpt= 2;
-#			$dicoOrderColumns{15}{'colName'} = "Genotype-".$mere ;
-#			
-#		}
-#		if( $mere eq "" && $pere eq ""){
-#			$cmpt= 1;
-#			$dicoOrderColumns{15}{'colName'} = "Genotype-".$mere ;
-#
-#	
-#	}
-#}
-
-
-#$dicoOrderColumns{14+$cmpt}{'colName'} = "#CHROM" ;
-#$dicoOrderColumns{15+$cmpt}{'colName'} = "POS" ;
-#$dicoOrderColumns{16+$cmpt}{'colName'} = "ID" ;
-#$dicoOrderColumns{17+$cmpt}{'colName'} = "REF" ;
-#$dicoOrderColumns{18+$cmpt}{'colName'} = "ALT" ;
-#$dicoOrderColumns{19+$cmpt}{'colName'} = "FILTER" ;
-#}
-#BUG with CA clinicalAssociation from seattle seq, which is absent from vcf in my test 
-
-#Alternative strategy, define only here the final column position
-#definition des numeros de colonnes qui prendront les commentaires
-#
-#
 
 #dico for sample sorting (index / dad / mum / control)
 my %dicoSamples ;
@@ -472,8 +409,9 @@ my %dicoColumnNbr;
 $dicoColumnNbr{'MPA_ranking'}=				0;
 $dicoColumnNbr{'Phenolyzer'}=				1;
 $dicoColumnNbr{'Gene.refGene'}=				2;
-$dicoColumnNbr{'CLNDBN'}=					3;
-$dicoColumnNbr{'CLNDSDBID'}=				4;
+$dicoColumnNbr{'CLNDBN'}=					3;  #OMIM - phenotypes
+$dicoColumnNbr{'CLNDSDBID'}=				4;	#phenotypes 
+												#tissue specificity
 $dicoColumnNbr{'gnomAD_genome_ALL'}=		5;
 $dicoColumnNbr{'gnomAD_exome_ALL'}=			6;
 $dicoColumnNbr{'CLINSIG'}=					7;
@@ -546,6 +484,12 @@ $dicoColumnNbr{'REF'}=		16+$cmpt ;
 $dicoColumnNbr{'ALT'}=		17+$cmpt ;
 $dicoColumnNbr{'FILTER'}=	18+$cmpt ;
 
+#Add custom Info in a new column
+if($customInfo ne ""){
+	$dicoColumnNbr{$customInfo}=	19+$cmpt ;
+}
+
+
 
 #Define column title order
 #my $columnTitles="MPA\tGene\tPhenotypes\tDisease\tMIM\tgnomAD_genome_ALL\tgnomAD_exome_ALL\tCLinvar\tSecondHit_CNV\t"
@@ -557,18 +501,6 @@ foreach my $key  (sort { $dicoColumnNbr{$a} <=> $dicoColumnNbr{$b} } keys %dicoC
 }
 
 
-#Optionnal: precise in which column is the relative comment
-#my $columnNbrForComment_MPA=$dicoColumnNbr{'MPA_ranking'};
-#my $columnNbrForComment_Gene=$dicoColumnNbr{'Gene.refGene'};
-#my $columnNbrForComment_GNOMADGENOME=$dicoColumnNbr{'gnomAD_genome_ALL'};
-#my $columnNbrForComment_GNOMADEXOME=$dicoColumnNbr{'gnomAD_exome_ALL'};
-#my $columnNbrForComment_Genotype=$dicoColumnNbr{'gnomAD_exome_ALL'};
-
-#define comment content with dico, initialization step
-#my %dicoCommentMPAscore;
-#my %dicoCommentGnomadExome;
-#my %dicoCommentGnomadGenome;
-#my %dicoCommentGenotype;
 
 #final strings for comment
 my $commentGenotype;
@@ -577,46 +509,26 @@ my $commentGnomADExomeScore;
 my $commentGnomADGenomeScore;
 
 #define sorted arrays with score for comment
-my @CommentMPA_score = ("MPA_impact",
+my @CommentMPA_score = ("MPA_final_score",
+						"MPA_impact",
 						"MPA_adjusted",
 						"MPA_available",
 						"MPA_deleterious",
-						"MPA_final_score",
-						"\n---SPLICE---",
+						"\n--- SPLICE ---",
 						'dbscSNV_ADA_SCORE',
 						'dbscSNV_RF_SCORE',
 						'dpsi_zscore',
-						"\n---MISSENSE---",
+						"\n--- MISSENSE ---",
+						'LRT_pred',
 						'SIFT_pred',
+						'FATHMM_pred',
+						'MetaLR_pred',
+						'MetaSVM_pred',
+						'PROVEAN_pred',
 						'Polyphen2_HDIV_pred',
 						'Polyphen2_HVAR_pred',
-						'LRT_pred',
 						'MutationTaster_pred',
-						'FATHMM_pred',
-						'fathmm-MKL_coding_pred',
-						'PROVEAN_pred',
-						'MetaSVM_pred',
-						'MetaLR_pred');
-
-#$dicoCommentMPAscore{'MPA_impact'}='.';
-#$dicoCommentMPAscore{'MPA_adjusted'}='.';
-#$dicoCommentMPAscore{'MPA_available'}='.';
-#$dicoCommentMPAscore{'MPA_deleterious'}='.';
-#$dicoCommentMPAscore{'MPA_final_score'}='.';
-
-#	$dicoCommentMPAscore{'SIFT_pred'}='.';
-#	#	$dicoCommentMPAscore{'Polyphen2_HDIV_pred'}='.';
-#	$dicoCommentMPAscore{'Polyphen2_HVAR_pred'}='.';
-#	$dicoCommentMPAscore{'LRT_pred'}='.';
-#	$dicoCommentMPAscore{'MutationTaster_pred'}='.';
-#	$dicoCommentMPAscore{'FATHMM_pred'}='.';
-#	$dicoCommentMPAscore{'PROVEAN_pred'}='.';
-#	$dicoCommentMPAscore{'fathmm-MKL_coding_pred'}='.';
-#	$dicoCommentMPAscore{'MetaSVM_pred'}='.';
-#	$dicoCommentMPAscore{'MetaLR_pred'}='.';
-#	$dicoCommentMPAscore{'dbscSNV_ADA_SCORE'}='.';
-#	$dicoCommentMPAscore{'dbscSNV_RF_SCORE'}='.';
-#	$dicoCommentMPAscore{'dpsi_zscore'}='.';
+						'fathmm-MKL_coding_pred');
 
 my @CommentGnomadGenome = ('gnomAD_genome_ALL',
                            'gnomAD_genome_AFR',
@@ -642,46 +554,19 @@ my @CommentGnomadExome = ('gnomAD_exome_ALL',
 
 
 
-#	$dicoCommentGnomadGenome{'gnomAD_genome_ALL'}='.';
-#	$dicoCommentGnomadGenome{'gnomAD_genome_AFR'}='.';
-#	$dicoCommentGnomadGenome{'gnomAD_genome_AMR'}='.';
-#	$dicoCommentGnomadGenome{'gnomAD_genome_ASJ'}='.';
-#	$dicoCommentGnomadGenome{'gnomAD_genome_EAS'}='.';
-#	$dicoCommentGnomadGenome{'gnomAD_genome_FIN'}='.';
-#	$dicoCommentGnomadGenome{'gnomAD_genome_NFE'}='.';
-#	$dicoCommentGnomadGenome{'gnomAD_genome_OTH'}='.';
 
-#	$dicoCommentGnomadExome{'gnomAD_exome_ALL'}='.';
-#	$dicoCommentGnomadExome{'gnomAD_exome_AFR'}='.';
-#	$dicoCommentGnomadExome{'gnomAD_exome_AMR'}='.';
-#	$dicoCommentGnomadExome{'gnomAD_exome_ASJ'}='.';
-#	$dicoCommentGnomadExome{'gnomAD_exome_EAS'}='.';
-#	$dicoCommentGnomadExome{'gnomAD_exome_FIN'}='.';
-#	$dicoCommentGnomadExome{'gnomAD_exome_NFE'}='.';
-#	$dicoCommentGnomadExome{'gnomAD_exome_OTH'}='.';
-
-
-
-#DEBUG this print is useful to check missing parameter in the VCF
-#foreach (sort {$a <=> $b} keys %dicoOrderColumns){
-# 	print $_."\t".$dicoOrderColumns{$_}{'colName'}."\n";
-#}                  
 
 
 
 my %dicoGeneForHTZcompo;
 my $previousGene ="";
 
-my $indexUnSort = 0;
+#my $indexUnSort = 0;
 
 #############################################
 #Start parsing VCF
 
 open( VCF , "<$incfile" )or die("Cannot open vcf file $incfile") ;
-
-#my @colonnes = ("#CHROM","POS","ID","REF","ALT","QUAL","FILTER");
-
-
 
 
 while( <VCF> ){
@@ -694,9 +579,10 @@ while( <VCF> ){
 	chomp $current_line;
 	@line = split( /\t/, $current_line );	
 	
-#	my $nsssi = ""; # likely useless
-
 	#DEBUG print STDERR "totototototototo1111111111\t". $dicoColumnNbr{'Gene.refGene'}."\n";
+
+
+
 #############################################
 #Treatment for First line to create header of the output
 
@@ -729,7 +615,7 @@ while( <VCF> ){
 			#$worksheetOMIM->write_row( 0, 0, \@columnTitles );
 	    	$worksheetACMG->write_row( 0, 0, \@columnTitles );
 		
-        #write comment for pLI
+			#write comment for pLI
 	    	$worksheet->write_comment( 0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3 );
 	    	$worksheetACMG->write_comment( 0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3  );
 
@@ -777,7 +663,6 @@ while( <VCF> ){
 			$worksheetLineCandidats ++;
 		}
 
-#DEBUG print STDERR "totototototototo\t". $dicoColumnNbr{'Gene.refGene'}."\n";
 
 		next;
 		
@@ -787,7 +672,6 @@ while( <VCF> ){
 
 	}else {
 
-		#DEBUG 		print STDERR "totototototototo2222\t". $dicoColumnNbr{'Gene.refGene'}."\n";
 
 
 		#initialise final printable string
@@ -795,10 +679,8 @@ while( <VCF> ){
 		
 		my $alt="";
 		my $ref="";
-#		my %data;
 
 		#Split line with tab 
-#		@line = split( /\t/, $current_line );   
 					
 		#DEBUG		print $current_line,"\n";	
 		
@@ -811,6 +693,8 @@ while( <VCF> ){
 		$finalSortData[$dicoColumnNbr{'FILTER'}]=	$line[6];
 
 
+
+
 #############################################
 ########### Split INFOS #####################
 	
@@ -820,8 +704,8 @@ while( <VCF> ){
 			my @infoKeyValue = split('=', $info );
 			if (scalar @infoKeyValue == 2){
 				$dicoInfo{$infoKeyValue[0]} = $infoKeyValue[1];
-#DEBUG
-#print $infoKeyValue[1]."\n";
+				#DEBUG
+				#print $infoKeyValue[1]."\n";
 			}
 		}
 
@@ -829,9 +713,9 @@ while( <VCF> ){
 #print Dumper(\%dicoInfo);
 
 
-		#select only 1% pop freq 
-		#TODO check how to treat "." as frequency, And use pop freq threshold as an input parameter (1%)
-#		next if(( $dicoInfo{'gnomAD_exome_ALL'} eq ".") || ($dicoInfo{'gnomAD_genome_ALL'} >= 0.01 && $dicoInfo{'gnomAD_exome_ALL'} >= 0.01));  
+		#select only x% pop freq 
+		#Use pop freq threshold as an input parameter (default = 2%)
+		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} >= $popFreqMax));  
 
 
 		#filling output line, check if INFO exists in the VCF
@@ -844,12 +728,11 @@ while( <VCF> ){
 				$finalSortData[$dicoColumnNbr{$keys}] = $dicoInfo{$keys};
 				#DEBUG
 				#print "finalSort\t".$finalSortData[$dicoColumnNbr{$keys}]."\n";
-				#DEBUG
 				#print "dicoInfo\t".$dicoInfo{$keys}."\n";
-				#DEBUG
 				#print "keys\t".$keys."\n";
 			}
 		}	
+
 
 		#Phenolyzer Column
 		if($phenolyzerFile ne ""){
@@ -869,6 +752,13 @@ while( <VCF> ){
 			}else{
 				$commentMPAscore .= $keys."\n";
 			}
+			
+			#refine MPA_rank for rank 7 missense 
+			if($keys eq "MPA_final_score" &&  $finalSortData[$dicoColumnNbr{'MPA_ranking'}] == 7 ){
+				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (10-$dicoInfo{$keys})/100;
+				#print $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\n";
+			}
+
 		}
 		
 		
@@ -889,8 +779,22 @@ while( <VCF> ){
 				$commentGnomADGenomeScore .= $keys."\t= ".$dicoInfo{$keys}."\n";
 			}
 		}
-		
-		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		
 		################ continue to fill the others dicoComment
 
@@ -1021,6 +925,89 @@ while( <VCF> ){
 		
 		} #END of Sample Treatment	
 
+
+		
+		#	print Dumper(\@finalSortData);
+
+#########FILL HASH STRUCTURE FOR FINAL SORT AND OUTPUT, according to rank
+		
+		#concatenate chrom_POS_REF_ALT to get variant ID
+		$variantID = $line[0]."_".$line[1]."_".$line[3]."_".$line[4];
+		
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'finalArray'} = [@finalSortData] ; 
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGnomADexome'} = $commentGnomADExomeScore  ;
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGnomADgenome'} = $commentGnomADGenomeScore ;
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGenotype'} = $commentGenotype ;
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentMPAscore'} = $commentMPAscore  ;
+
+			#initialize worksheet
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} = "";
+
+
+			#ACMG
+			if(defined $ACMGgene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} ){
+				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} = "ACMG";
+			}
+		
+			#CANDIDATES
+			if($candidates ne ""){
+				if(defined $candidateGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} ){
+					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#CANDIDATES";
+				
+				}
+				
+			}
+			
+			#PHENOLYZER COMMENT
+			if(defined  $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}){
+				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} = $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'comment'}  ;
+
+			}
+
+
+
+
+
+		#additionnal analysis in TRIO context
+			if ($trio eq "YES"){
+			
+				switch ($familyGenotype){
+					#Find de novo
+					case ["_1/1_0/0_0/0_" ,"_0/1_0/0_0/0_","_1/0_0/0_0/0_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#DENOVO";}
+
+					#find Autosomique Recessive
+					case ["_1/1_0/1_0/1_" , "_1/1_1/0_1/0_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#AUTOREC";}
+
+				#Find SNVvsCNV
+
+					case ["_1/1_0/0_0/1_" , "_1/1_0/0_1/0_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#SNPmCNVp";}
+					case ["_1/1_0/1_0/0_" , "_1/1_1/0_0/0_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#SNPpCNVm";}
+
+				}
+
+
+			}
+
+
+
+
+		#create pLI comment and format
+		if(defined $dicoInfo{'pLi.refGene'} && $dicoInfo{'pLi.refGene'} ne "." ){
+
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} =  "pLI = ".$dicoInfo{'pLi.refGene'}."\npRec = ".$dicoInfo{'pRec.refGene'}."\npNull = ".$dicoInfo{'pNull.refGene'} ;
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  sprintf('#%2.2X%2.2X%2.2X',($dicoInfo{'pLi.refGene'}*255 + $dicoInfo{'pRec.refGene'}*255),($dicoInfo{'pRec.refGene'}*255 + $dicoInfo{'pNull.refGene'} * 255),0) ;
+
+        	$format_pLI = $workbook->add_format(bg_color => $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"color_format"});
+		
+		}else{	
+			
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} =  "." ;
+			
+			$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
+		}
+
+
+
 	} #END of IF-ELSE(#CHROM)	
 
 
@@ -1034,53 +1021,25 @@ while( <VCF> ){
 
 
 			#Concatenate  Gene summary with gene Name
-			if(defined $dicoGeneSummary{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}){
-				$geneSummaryConcat = $finalSortData[$dicoColumnNbr{'Gene.refGene'}]." ### ".$dicoGeneSummary{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]};
-			}else{
-		        	$geneSummaryConcat = $finalSortData[$dicoColumnNbr{'Gene.refGene'}];
-			}
+#			if(defined $dicoGeneSummary{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}){
+#				$geneSummaryConcat = $finalSortData[$dicoColumnNbr{'Gene.refGene'}]." ### ".$dicoGeneSummary{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]};
+#			}else{
+#		        	$geneSummaryConcat = $finalSortData[$dicoColumnNbr{'Gene.refGene'}];
+#			}
 
 
-			#Add color code format related to pLI
-			if(defined $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"comment"}){
-				$pLI_values = $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"comment"};
-        		$format_pLI = $workbook->add_format(bg_color => $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"color_format"});
+#			#Add color code format related to pLI
+#			if(defined $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"comment"}){
+#				$pLI_values = $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"comment"};
+			#       		$format_pLI = $workbook->add_format(bg_color => $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"color_format"});
 
-			}else{
-				$pLI_values = "";
-              			#$format_pLI -> set_bg_color('#FFFFFF');
-				$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
+#			}else{
+#				$pLI_values = "";
+#			
+#				$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
 
-			} 
+#			} 
 
-
-
-
-			#write incidentalome-ACMG sheet
-			foreach my $ACMGgene (@ACMGlist) {
-				if($finalSortData[$dicoColumnNbr{'Gene.refGene'}] eq $ACMGgene){
-					$worksheetACMG->write_row( $worksheetLineACMG, 0, \@finalSortData );
-					$worksheetACMG->write( $worksheetLineACMG,$dicoColumnNbr{'Gene.refGene'},$geneSummaryConcat,$format_pLI );
-					if($pLI_values ne ""){
-						$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'Gene.refGene'},$pLI_values,x_scale => 2 );
-					}	
-					$worksheetLineACMG ++;
-				}
-			}
-			
-			#write candidates genes sheet
-			if($candidates ne ""){
-				foreach my $candGene (@candidatesList){
-					if($finalSortData[$dicoColumnNbr{'Gene.refGene'}] eq $candGene){
-						$worksheetCandidats->write_row( $worksheetLineCandidats, 0, \@finalSortData );
-						$worksheetCandidats->write( $worksheetLineCandidats,$dicoColumnNbr{'Gene.refGene'},$geneSummaryConcat,$format_pLI );
-						if($pLI_values ne ""){
-							$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'Gene.refGene'},$pLI_values ,x_scale => 2);
-						}	
-						$worksheetLineCandidats ++;
-					}
-				}
-			}
 
 
 			#additionnal analysis in TRIO context
@@ -1114,9 +1073,10 @@ while( <VCF> ){
 
 						$worksheetHTZcompo->write_row( $worksheetLineHTZcompo, 0, \@emptyArray );
 						$worksheetHTZcompo->write_row( $worksheetLineHTZcompo, 0, \@finalSortData );
-						$worksheetHTZcompo->write( $worksheetLineHTZcompo, $dicoColumnNbr{'Gene.refGene'},$geneSummaryConcat,$format_pLI );
-						if($pLI_values ne ""){
-							$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Gene.refGene'},$pLI_values,x_scale => 2);
+						if($hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} ne "."){
+								$worksheetHTZcompo->write( $worksheetLineHTZcompo, $dicoColumnNbr{'Gene.refGene'},$finalSortData[$dicoColumnNbr{'Gene.refGene'}],$format_pLI );
+								$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'},x_scale => 2);
+							
 						}
 						$worksheetLineHTZcompo ++;
 
@@ -1125,85 +1085,230 @@ while( <VCF> ){
 #						if(defined $dicoGeneForHTZcompo{$previousGene} && $dicoGeneForHTZcompo{$previousGene}{'ok'}==0 ){
 						if(($previousGene ne $finalSortData[$dicoColumnNbr{'Gene.refGene'}]) && $dicoGeneForHTZcompo{$previousGene}{'ok'}==0 ){
 							$worksheetLineHTZcompo -= $dicoGeneForHTZcompo{$previousGene}{'cnt'};
-							$worksheetAR->write_comment( $worksheetLineAR, $dicoColumnNbr{'Gene.refGene'},$pLI_values ,x_scale => 2);
-						}		
-						$worksheetLineAR ++; 
-				}
+						}
+						$dicoGeneForHTZcompo{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'cnt'} = 1;
+						$dicoGeneForHTZcompo{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'ok'} = 0;
 
+						if($familyGenotype =~ /0\/0_$/){
 
-				#Find SNVvsCNV
-				if($familyGenotype eq "_1/1_0/0_0/1_"   || $familyGenotype eq "_1/1_0/0_1/0_"){
-					$worksheetSNPmereVsCNVpere->write_row($worksheetLineSNPmereVsCNVpere , 0, \@finalSortData );
-					$worksheetSNPmereVsCNVpere->write( $worksheetLineSNPmereVsCNVpere, $dicoColumnNbr{'Gene.refGene'},$geneSummaryConcat,$format_pLI );
-					if($pLI_values ne ""){
-						$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'Gene.refGene'} ,$pLI_values,x_scale => 2 );
+							$dicoGeneForHTZcompo{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'pvsm'} = 1;
+							$dicoGeneForHTZcompo{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'mvsp'} = 0;
+
+						}else{
+
+							$dicoGeneForHTZcompo{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'mvsp'} = 1;
+							$dicoGeneForHTZcompo{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'pvsm'} = 0;
+
+						}
+
+						$worksheetHTZcompo->write_row( $worksheetLineHTZcompo, 0, \@emptyArray );
+						$worksheetHTZcompo->write_row( $worksheetLineHTZcompo, 0, \@finalSortData );
+																																									
+						if($hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} ne "."){
+								$worksheetHTZcompo->write( $worksheetLineHTZcompo, $dicoColumnNbr{'Gene.refGene'},$finalSortData[$dicoColumnNbr{'Gene.refGene'}],$format_pLI  );
+								$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'},x_scale => 2);
+						}	
+						
+						
+																																									$worksheetLineHTZcompo ++;
+																																									$previousGene = $finalSortData[$dicoColumnNbr{'Gene.refGene'}];
+						
+						}
 					}
-					$worksheetLineSNPmereVsCNVpere ++;
-				}
 
-				if($familyGenotype eq "_1/1_0/1_0/0_" || $familyGenotype eq "_1/1_1/0_0/0_" ){
-					$worksheetSNPpereVsCNVmere->write_row($worksheetLineSNPpereVsCNVmere , 0, \@finalSortData  );
-					$worksheetSNPpereVsCNVmere->write( $worksheetLineSNPpereVsCNVmere, $dicoColumnNbr{'Gene.refGene'},$geneSummaryConcat,$format_pLI );
-					if($pLI_values ne ""){
-						$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere, $dicoColumnNbr{'Gene.refGene'},$pLI_values ,x_scale => 2);
-					}
-					$worksheetLineSNPpereVsCNVmere ++;
-				}
-
-				#Find de novo
-				if($familyGenotype eq "_1/1_0/0_0/0_" || $familyGenotype eq "_0/1_0/0_0/0_"|| $familyGenotype eq "_1/0_0/0_0/0_" ){
-					$worksheetDENOVO->write_row( $worksheetLineDENOVO, 0, \@finalSortData );
-					$worksheetDENOVO->write( $worksheetLineDENOVO, $dicoColumnNbr{'Gene.refGene'},$geneSummaryConcat,$format_pLI );
-					if($pLI_values ne ""){
-						$worksheetDENOVO->write_comment( $worksheetLineDENOVO, $dicoColumnNbr{'Gene.refGene'},$pLI_values,x_scale => 2 );
-					}
-					$worksheetLineDENOVO ++;
-				}
-
-				
-
-
-			}
-			#DEBUG print "toto\n";
-			#DEBUG print Dumper(\@finalSortData);
+				}#END IF HTZ COMPO
 			
+			}# END IF TRIO
+
+}#END WHILE VCF
 
 
+#try to output sort by rank
+
+foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
+	#print $rank."\n";
+	
+	foreach my $variant ( keys %{$hashFinalSortData{$rank}}){
+
+		#print $variant."\n";
+
+		###############  ALL #####################
+			$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
+ 
+			
+			$worksheet->write_row( $worksheetLine, 0, $hashFinalSortData{$rank}{$variant}{'finalArray'} );
+			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$rank}{$variant}{'commentMPAscore'} ,x_scale => 2 );
+			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 2 );
+			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 2 );
+			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
+			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
 
 
-      #write sheet "ALL"
-		#write complete line
-			$worksheet->write_row( $worksheetLine, 0, \@finalSortData );
-		#write genesummary
-		#	
-			if($geneSummary ne ""){
-				$worksheet->write( $worksheetLine, $dicoColumnNbr{'Gene.refGene'},$geneSummaryConcat,$format_pLI );
-			}
+			if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
 
-			#add comment for MPA column
-			$worksheet->write_comment( $worksheetLine, $dicoColumnNbr{'MPA_ranking'}, $commentMPAscore ,x_scale => 3);
-			#add comment for genotype
-			$worksheet->write_comment( $worksheetLine, $dicoColumnNbr{'Genotype-'.$cas}, $commentGenotype ,x_scale => 3);
-			#add comment for gnomAD_genome
-			$worksheet->write_comment( $worksheetLine, $dicoColumnNbr{'gnomAD_genome_ALL'}, $commentGnomADGenomeScore ,x_scale => 3);
-			#add comment for gnomAD_exome
-			$worksheet->write_comment( $worksheetLine, $dicoColumnNbr{'gnomAD_exome_ALL'}, $commentGnomADExomeScore ,x_scale => 3);
-			#add comment for phenolyzer
-			if(defined $finalSortData[$dicoColumnNbr{'Phenolyzer'}]){
-				$worksheet->write_comment( $worksheetLine, $dicoColumnNbr{'Phenolyzer'},$phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'comment'} ,x_scale => 2);
-			}
-			#add pLI comment 
-			if($pLI_values ne ""){
-				$worksheet->write_comment( $worksheetLine, $dicoColumnNbr{'Gene.refGene'},$pLI_values ,x_scale => 2);
-			}
+        		$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$rank}{$variant}{'colorpLI'});
+
+
+				$worksheet->write( $worksheetLine,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'Gene.refGene'}]     ,$format_pLI );
+				$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'commentpLI'},x_scale => 2 );
+			}	
+
 			$worksheetLine ++;
+	
 
+
+
+
+
+
+		######### ACMG DS #############
+
+		if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /ACMG/){
+
+			$worksheetACMG->write_row( $worksheetLineACMG, 0, $hashFinalSortData{$rank}{$variant}{'finalArray'} );
+			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$rank}{$variant}{'commentMPAscore'} ,x_scale => 2 );
+			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 2 );
+			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 2 );
+			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
+			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+
+
+			if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
+				$worksheetACMG->write( $worksheetLineACMG,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'Gene.refGene'}]     ,$format_pLI );
+				$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'commentpLI'},x_scale => 2 );
+			}	
+
+			$worksheetLineACMG ++;
 		}
-
-	}
-}
+	
 
 
+		######### CANDIDATES #############
+
+		if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /CANDIDATE/){
+
+			$worksheetCandidats->write_row( $worksheetLineCandidats, 0, $hashFinalSortData{$rank}{$variant}{'finalArray'} );
+			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$rank}{$variant}{'commentMPAscore'} ,x_scale => 2 );
+			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 2 );
+			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 2 );
+			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
+			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+
+
+			if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
+				$worksheetCandidats->write( $worksheetLineCandidats,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'Gene.refGene'}]     ,$format_pLI );
+				$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'commentpLI'},x_scale => 2 );
+			}	
+
+			$worksheetLineCandidats ++;
+		}
+	
+
+		if($trio eq "YES"){
+			
+			#DENOVO
+			if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /DENOVO/){
+
+				$worksheetDENOVO->write_row( $worksheetLineDENOVO, 0, $hashFinalSortData{$rank}{$variant}{'finalArray'} );
+				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$rank}{$variant}{'commentMPAscore'} ,x_scale => 2 );
+				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 2 );
+				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 2 );
+				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
+				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+
+
+				if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
+					$worksheetDENOVO->write( $worksheetLineDENOVO,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'Gene.refGene'}]     ,$format_pLI );
+					$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'commentpLI'},x_scale => 2 );
+				}	
+
+				$worksheetLineDENOVO ++;
+
+				next;
+
+			}	
+
+
+			#AUTOSOMIC RECESSIVE HOMOZYGOUS
+			if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /AUTOREC/){
+
+				$worksheetAR->write_row( $worksheetLineAR, 0, $hashFinalSortData{$rank}{$variant}{'finalArray'} );
+				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$rank}{$variant}{'commentMPAscore'} ,x_scale => 2 );
+				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 2 );
+				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 2 );
+				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
+				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+
+
+				if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
+					$worksheetAR->write( $worksheetLineAR,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'Gene.refGene'}]     ,$format_pLI );
+					$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'commentpLI'},x_scale => 2 );
+				}	
+				
+				$worksheetLineAR ++;
+
+				next;
+
+			}
+
+			#SNPvsCNV
+			if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /SNPpCNVm/) {
+
+				$worksheetSNPpereVsCNVmere->write_row( $worksheetLineSNPpereVsCNVmere, 0, $hashFinalSortData{$rank}{$variant}{'finalArray'} );
+				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$rank}{$variant}{'commentMPAscore'} ,x_scale => 2 );
+				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 2 );
+				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 2 );
+				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
+				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+
+
+				if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
+					$worksheetSNPpereVsCNVmere->write( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'Gene.refGene'}]     ,$format_pLI );
+					$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'commentpLI'},x_scale => 2 );
+				}	
+				
+				$worksheetLineSNPpereVsCNVmere ++;
+				next;
+
+			}	
+
+
+			if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /SNPmCNVp/){
+
+				$worksheetSNPmereVsCNVpere->write_row( $worksheetLineSNPmereVsCNVpere, 0, $hashFinalSortData{$rank}{$variant}{'finalArray'} );
+				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$rank}{$variant}{'commentMPAscore'} ,x_scale => 2 );
+				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 2 );
+				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 2 );
+				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
+				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+
+
+				if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
+					$worksheetSNPmereVsCNVpere->write( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'Gene.refGene'}]     ,$format_pLI );
+					$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'Gene.refGene'},$hashFinalSortData{$rank}{$variant}{'commentpLI'},x_scale => 2 );
+				}	
+				$worksheetLineSNPmereVsCNVpere ++;
+				
+				next;
+
+			}	
+
+
+
+
+
+
+
+
+		}   # END IF TRIO
+	
+	
+	
+	
+	
+	
+	}   # END FOREACH VARIANT
+}	#END FOREACH RANK
 
 
 
@@ -1231,6 +1336,7 @@ if($candidates ne ""){
 
 
 close(VCF);
-print STDERR "Done!";
+
+print STDERR "Done!\n\n\n";
 
 exit 0;
