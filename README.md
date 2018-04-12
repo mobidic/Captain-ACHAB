@@ -32,7 +32,7 @@ vim missense_zscore.txt ## change header "gene" to "#Gene_name" and name column 
 
 #### OMIM 
 
-According to use OMIM license, download the gene2map.txt at https://www.omim.org/downloads/
+According to use OMIM license, download the gene2map.txt at https://www.omim.org/downloads/.
 
 ```bash
 tail -n+4 genemap2.txt | cut -f 9,13 > omim.tsv
@@ -61,10 +61,10 @@ mergeFinal = pandas.merge(merge,zscore, on="#Gene_name", how="left", left_index=
 mergeFinal.to_csv('gene_customfullxref_tmp.txt',sep='\t')
 ```
 
-Cut the first column created by pandas and the gene_customfullxref.txt is ready to be use in ANNOVAR. sed and awk command are used to replace some characters not compatible for regex in ANNOVAR. 
+Cut the first column created by pandas and the gene_customfullxref.txt is ready to be use in ANNOVAR. sed and awk command are used to replace some characters not compatible for regex in ANNOVAR. Last awk command fill the empty cells with a point.
 
 ```bash
-cut -f2- gene_customfullxref_tmp.txt | sed 's/+/plus/g' | awk 'BEGIN{FS=OFS="\t"} {for (i=6;i<=7;i++) gsub(/-/,"_",$i)}1' | | awk -F "\t" '{gsub(/-/,"_",$(NF-1))}1' | sed 's/(congenital with brain and eye anomalies,/(congenital with brain and eye anomalies),/g' > gene_customfullxref.txt
+cut -f2- gene_customfullxref_tmp.txt | sed 's/+/plus/g' | awk 'BEGIN{FS=OFS="\t"} {for (i=6;i<=7;i++) gsub(/-/,"_",$i)}1' |  awk 'BEGIN{FS=OFS="\t"} {gsub(/-/,"_",$(NF-1))}1' | sed 's/(congenital with brain and eye anomalies,/(congenital with brain and eye anomalies),/g' | awk -F"\t" -v OFS="\t" '{for (i=1;i<=NF;i++) {if ($i == "") $i="."} print $0}' > gene_customfullxref.txt
 rm gene_customfullxref_tmp.txt 
 ```
 
@@ -86,7 +86,7 @@ See installation and more informations about MPA at [MoBiDiC Prioritization Algo
 git clone https://github.com/mobidic/MPA.git
 ```
 
-Command line for annotated vcf by ANNOVAR with MPA scores. 
+Command line for annotated vcf by ANNOVAR with MPA scores.
 
 ```bash
 python MPA.py -i name.hg19_multianno.vcf -o name.hg19_multianno_MPA.vcf
