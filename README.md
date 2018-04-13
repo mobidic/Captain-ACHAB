@@ -1,6 +1,6 @@
 # Captain ACHAB | Analysis Converter for Human who might Abhor Bioinformatics
 --------------------------------------------------------------------------------
-![JHI](image.png)
+![JHI](achabjust.png)
 
 ## Overview
 
