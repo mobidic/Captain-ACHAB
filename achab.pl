@@ -905,7 +905,7 @@ while( <VCF> ){
 						
 						$DP = $genotype[1];
 						$AD = 0;
-						$AD .= ","0;
+						$AD .= ",0";
 					}
 
 					
