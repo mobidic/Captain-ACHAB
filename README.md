@@ -72,6 +72,10 @@ rm gene_customfullxref_tmp.txt
 
 A tutorial to install ANNOVAR and more informations are available at : [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/)
 
+Note: multiallelic lines from vcf have to be split before annotation ( using: sort vcf then
+bcftools-1.3.1/htslib-1.3.1/bgzip -i example.sort.vcf
+bcftools-1.3.1/bcftools norm -O v -m - -o example.norm.vcf example.sort.vcf.gz)
+
 Command line for vcf annotation by ANNOVAR with needed databases. 
 
 ```bash
@@ -101,7 +105,7 @@ Installation (need Bioperl and Graph, easy to install with cpanm)
 git clone https://github.com/WGLab/phenolyzer
 ```
 
-Create a disease file where you can add your phenotypes (one line per phenotype).
+Create a disease file where you can add your HPO phenotypes (one line per phenotype).
 
 ```bash
 vim disease.txt
@@ -124,7 +128,7 @@ https://github.com/mobidic/Captain-ACHAB.git
 Command line to use Captain ACHAB 
 
 ```
-# USAGE : perl achab.pl --vcf <vcf_file> --cas <index_sample_name> --pere <father_sample_name> --mere <mother_sample_name> --control <control_sample_name>  --caller <freebayes|GATK> --trio <YES|NO> --candidats <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqMax <allelic frequency threshold from 0 to 1 default=0.02>  --customInfo  <info name (will be added in a new column)>
+# USAGE : perl achab.pl --vcf <vcf_file> --cas <index_sample_name> --pere <father_sample_name> --mere <mother_sample_name> --control <control_sample_name>  --trio <YES|NO> --candidats <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)>
 ```
 
 ## Requirements
