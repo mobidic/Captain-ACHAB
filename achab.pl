@@ -848,9 +848,10 @@ while( <VCF> ){
 		}elsif($line[8] eq "GT:GOF:GQ:NR:NV:PL"){
 			$caller = "platypus";
 		}elsif($line[8] eq "GT:DP:GQ"){
-			print STDERR "Multi-allelic line detection. Please split the vcf file in order to get 1 allele by line\n";
-			print STDERR $current_line ."\n";
-			exit 1; 
+			$caller = "other _ GT:DP:GQ";
+			#print STDERR "Multi-allelic line detection. Please split the vcf file in order to get 1 allele by line\n";
+			#print STDERR $current_line ."\n";
+			#exit 1; 
 		}else{
 			print STDERR "The Caller used for this line is unknown. Treating line is a risky business.\n";
 			print STDERR $current_line ."\n";
@@ -900,6 +901,11 @@ while( <VCF> ){
 						$DP = $genotype[3];
 						$AD = ($genotype[3] - $genotype[4]);
 						$AD .= ",".$genotype[4];
+					}elsif($caller eq "other _ GT:DP:GQ"){
+						
+						$DP = $genotype[1];
+						$AD = 0;
+						$AD .= ","0;
 					}
 
 					
