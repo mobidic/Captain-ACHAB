@@ -976,7 +976,7 @@ while( <VCF> ){
 #########FILL HASH STRUCTURE FOR FINAL SORT AND OUTPUT, according to rank
 		
 		#concatenate chrom_POS_REF_ALT to get variant ID
-		$variantID = $line[0]."_".$line[1]."_".$line[3]."_".$line[4];
+		$variantID = $line[0]."_".$line[1]."_".$line[3]."_".$line[4]."_".$caller;
 		
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'finalArray'} = [@finalSortData] ; 
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGnomADexome'} = $commentGnomADExomeScore  ;
@@ -1004,6 +1004,7 @@ while( <VCF> ){
 			}
 			
 			#PHENOLYZER COMMENT
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} = "";
 			if(defined  $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}){
 				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} = $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{'comment'}  ;
 
@@ -1140,7 +1141,9 @@ while( <VCF> ){
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentMPAscore'} ,x_scale => 2 );
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGnomADgenome'} ,x_scale => 2 );
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGenotype'} ,x_scale => 2 );
-						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} ,x_scale => 2 );
+						if($hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} ne ""){
+							$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} ,x_scale => 2 );
+						}
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentInterVar'} ,x_scale => 2 );
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGnomADexome'} ,x_scale => 2 );
 
@@ -1180,7 +1183,9 @@ while( <VCF> ){
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'MPA_ranking'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentMPAscore'} ,x_scale => 2 );
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGnomADgenome'} ,x_scale => 2 );
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGenotype'} ,x_scale => 2 );
-						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} ,x_scale => 2 );
+						if($hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} ne ""){
+							$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} ,x_scale => 2 );
+						}
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentInterVar'} ,x_scale => 2 );
 						$worksheetHTZcompo->write_comment( $worksheetLineHTZcompo,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGnomADexome'} ,x_scale => 2 );
 						
@@ -1215,8 +1220,9 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 3 );
 			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 3 );
 			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
-			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
-
+			if ($hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ne ""){
+				$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+			}
 			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
 
 
@@ -1248,7 +1254,9 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 3 );
 			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 3 );
 			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
-			$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+			if ($hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ne ""){
+				$worksheetACMG->write_comment( $worksheetLineACMG,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+			}
 			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
 
 
@@ -1271,7 +1279,9 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 3 );
 			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 3 );
 			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
-			$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+			if ($hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ne ""){
+				$worksheetCandidats->write_comment( $worksheetLineCandidats,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+			}
 			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
 
 
@@ -1294,8 +1304,10 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 3 );
 				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 3 );
 				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
-				$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
-			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
+				if ($hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ne ""){
+					$worksheetDENOVO->write_comment( $worksheetLineDENOVO,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+				}
+				$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
 
 
 				if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
@@ -1318,8 +1330,10 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 3 );
 				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 3 );
 				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
-				$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
-			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
+				if ($hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ne ""){
+					$worksheetAR->write_comment( $worksheetLineAR,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+				}
+				$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
 
 
 				if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
@@ -1341,8 +1355,10 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 3 );
 				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 3 );
 				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
-				$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
-			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
+				if ($hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ne ""){
+					$worksheetSNPpereVsCNVmere->write_comment( $worksheetLineSNPpereVsCNVmere,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+				}
+				$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
 
 
 				if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
@@ -1363,8 +1379,10 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'gnomAD_genome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'} ,x_scale => 3 );
 				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'gnomAD_exome_ALL'}, $hashFinalSortData{$rank}{$variant}{'commentGnomADexome'} ,x_scale => 3 );
 				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'Genotype-'.$cas}, $hashFinalSortData{$rank}{$variant}{'commentGenotype'} ,x_scale => 2 );
-				$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
-			$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
+				if ($hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ne ""){
+					$worksheetSNPmereVsCNVpere->write_comment( $worksheetLineSNPmereVsCNVpere,$dicoColumnNbr{'Phenolyzer'}, $hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'} ,x_scale => 2 );
+				}
+				$worksheet->write_comment( $worksheetLine,$dicoColumnNbr{'InterVar_automated'}, $hashFinalSortData{$rank}{$variant}{'commentInterVar'} ,x_scale => 4 );
 
 
 				if ($hashFinalSortData{$rank}{$variant}{'commentpLI'} ne "."){
@@ -1418,7 +1436,7 @@ if($candidates ne ""){
 			$worksheetCandidats->autofilter('A1:Z'.$worksheetLineCandidats);
 }
 
-
+$workbook->close();
 close(VCF);
 
 print STDERR "Done!\n\n\n";
