@@ -114,6 +114,9 @@ open( VCF , "<$incfile" )or die("Cannot open vcf file $incfile") ;
 # Create a new Excel workbook
 my $workbook = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'.xlsx' );
 
+# Create a "new hope Excel" aka NON-PASS / MPA_RANKING=8 
+#my $workbookNewHope = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'_newHope.xlsx' );
+
 #create color background for pLI values
 my $format_pLI = $workbook->add_format();
 #$format_pLI -> set_pattern();
@@ -842,7 +845,7 @@ while( <VCF> ){
 		#
 		#genotype concatenation for easy hereditary status
 		$familyGenotype = "_";		
-		$commentGenotype = "CALLER = ".$caller."\tQUALITY = ".$line[5]."\n\n";
+		$commentGenotype = "CALLER = ".$caller."\t QUALITY = ".$line[5]."\n\n";
 
 
 		#for each sample sort by sample wanted 
