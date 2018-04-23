@@ -1403,7 +1403,7 @@ sub writeThisSheet {
 
 
 			$worksheet->write_row( $worksheetLine, 0, $hashTemp{'finalArray'} );
-			$worksheet->write_comment( $worksheetLine,$hashColumn{'MPA_ranking'},		$hashTemp{'commentMPAscore'} ,x_scale => 2, y_scale => 2 );
+			$worksheet->write_comment( $worksheetLine,$hashColumn{'MPA_ranking'},		$hashTemp{'commentMPAscore'} ,x_scale => 2, y_scale => 5 );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'gnomAD_genome_ALL'},	$hashTemp{'commentGnomADgenome'} ,x_scale => 3, y_scale => 2  );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'gnomAD_exome_ALL'},	$hashTemp{'commentGnomADexome'} ,x_scale => 3, y_scale => 2  );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'Genotype-'.$case},	$hashTemp{'commentGenotype'} ,x_scale => 2 );
@@ -1411,7 +1411,7 @@ sub writeThisSheet {
 			
 			if ($hashTemp{'commentPhenotype'} ne ""){
 
-				$worksheet->write_comment( $worksheetLine,$hashColumn{'Phenotypes.refGene'}, $hashTemp{'commentPhenotype'} ,x_scale => 4, y_scale => 3  );
+				$worksheet->write_comment( $worksheetLine,$hashColumn{'Phenotypes.refGene'}, $hashTemp{'commentPhenotype'} ,x_scale => 5, y_scale => 5  );
 			}
 			
 			if ($hashTemp{'commentPhenolyzer'} ne ""){
@@ -1419,7 +1419,7 @@ sub writeThisSheet {
 			}
 
 			if ($hashTemp{'commentInterVar'} ne ""){
-				$worksheet->write_comment( $worksheetLine,$hashColumn{'InterVar_automated'}, $hashTemp{'commentInterVar'} ,x_scale => 4, y_scale => 3  );
+				$worksheet->write_comment( $worksheetLine,$hashColumn{'InterVar_automated'}, $hashTemp{'commentInterVar'} ,x_scale => 5, y_scale => 5  );
 			}
 
 
@@ -1430,7 +1430,7 @@ sub writeThisSheet {
 
 
 				$worksheet->write( $worksheetLine,$hashColumn{'Gene.refGene'}, $hashTemp{'finalArray'}[$hashColumn{'Gene.refGene'}]     ,$format_pLI );
-				$worksheet->write_comment( $worksheetLine,$hashColumn{'Gene.refGene'},$hashTemp{'commentpLI'},x_scale => 4, y_scale => 3  );
+				$worksheet->write_comment( $worksheetLine,$hashColumn{'Gene.refGene'},$hashTemp{'commentpLI'},x_scale => 5, y_scale => 5  );
 			}	
 
 }#END OF SUB
