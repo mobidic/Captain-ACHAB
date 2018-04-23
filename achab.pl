@@ -877,9 +877,18 @@ while( <VCF> ){
 
 					}elsif($caller eq "platypus"){
 						
-						$DP = $genotype[3];
-						$AD = ($genotype[3] - $genotype[4]);
-						$AD .= ",".$genotype[4];
+						if($genotype[3] =~ m/,/){
+							my @genotype_DPsplit = split(',', $genotype[3]);
+							my @genotype_ADsplit = split(',', $genotype[4]);
+							$DP = $genotype_DPsplit[0];
+							$AD = ($genotype_DPsplit[0] - $genotype_ADsplit[0]);
+							$AD .= ",".$genotype_ADsplit[0];
+							
+						}else{
+							$DP = $genotype[3];
+							$AD = ($genotype[3] - $genotype[4]);
+							$AD .= ",".$genotype[4];
+						}
 					}elsif($caller eq "other _ GT:DP:GQ"){
 						
 						$DP = $genotype[1];
@@ -943,7 +952,7 @@ while( <VCF> ){
 
 				#put the genotype and comments info into string
 				$finalSortData[$dicoColumnNbr{$dicoSamples{$finalcol}{'columnName'}}] = $genotype[0];
-				$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t-\t".$genotype[0]."\nDP = ".$DP."\tAD = ".$AD."\tAB = ".$AB."\n\n";
+				$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[0]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
 				$familyGenotype .= $genotype[0]."_";
 		
 		} #END of Sample Treatment	
