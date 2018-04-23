@@ -713,6 +713,12 @@ while( <VCF> ){
 		#select only x% pop freq 
 		#Use pop freq threshold as an input parameter (default = 2%)
 		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} >= $popFreqThr));  
+		
+		#remove NON PASS variant
+		next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
+		
+		#remove MPA_Ranking = 8
+		next if( $dicoInfo{'MPA_ranking'} == 8);  
 
 
 		#filling output line, check if INFO exists in the VCF
