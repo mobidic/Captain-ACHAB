@@ -2,34 +2,29 @@
 
 ##### achab.pl ####
 
-# Auteur : Thomas Guignard 2018
-# USAGE : achab.pl --vcf <vcf_file> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidats <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)>
+# Author : Thomas Guignard 2018
+# USAGE : achab.pl --vcf <vcf_file> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER="PASS" and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>
 #
 
 # Description : 
 # Create an User friendly Excel file from an MPA annotated VCF file. 
 
-# Version : 
-# v1.0.0 20161020 Initial Implementation 
-# v6 20171201 Use VCF header to get parameter
-# v7 20180119 Adapt to annovar annotation
-# v8 20180329 Adapt to MPA and phenolyzer outputs
 
 use strict; 
 use warnings;
 use Getopt::Long; 
-use Pod::Usage;
-use List::Util qw(first);
 use Excel::Writer::XLSX;
-use Data::Dumper;
 use Switch;
+#use Pod::Usage;
+#use List::Util qw(first);
+#use Data::Dumper;
 
 #parameters
-my $man = 0;
-my $help = 0;
+my $man = "USAGE : \nachab.pl --vcf <vcf_file> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER=PASS and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>";
+my $help = "USAGE : \nachab.pl --vcf <vcf_file> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER=PASS and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>";
 my $current_line;
 my $incfile;
-my $outfile;
+#my $outfile;
 my $case = "";
 my $mum = "";
 my $control = "";
@@ -37,6 +32,7 @@ my $dad = "";
 my $caller = "";
 my $trio = "";
 my $popFreqThr = "";
+my $newHope = "";
 
 #stuff for files
 my $candidates = "";
@@ -68,15 +64,7 @@ my @finalSortData;
 my $familyGenotype;		
 my %hashFinalSortData;
 	
-#my $nbrSample = 0;
-#my $indexPere = 0;
-#my $indexMere = 0;
-#my $indexCas = 0;
-#my $indexControl = 0;
 
-#my $annotation = "";
-
-#$arguments = GetOptions( "vcf=s" => \$incfile, "output=s" => \$outfile, "case=s" => \$case, "dad=s" => \$dad, "mum=s" => \$mum, "control=s" => \$control );
 #$arguments = GetOptions( "vcf=s" => \$incfile ) or pod2usage(-vcf => "$0: argument required\n") ;
 
 GetOptions( 	"vcf=s"				=> \$incfile,
@@ -85,12 +73,13 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 				"mum=s"				=> \$mum, 
 				"control=s"			=> \$control,
 				"trio=s"			=> \$trio,
-				"candidats=s"		=> \$candidates,
-				"geneSummary=s"		=> \$geneSummary,
-				"pLIFile=s"			=> \$pLIFile,
+				"candidates=s"		=> \$candidates,
+#				"geneSummary=s"		=> \$geneSummary,
+#				"pLIFile=s"			=> \$pLIFile,  # no more used
 				"phenolyzerFile=s"	=> \$phenolyzerFile,
 				"popFreqThr=s"		=> \$popFreqThr, 
 				"customInfo=s"		=> \$customInfo, 
+				"newHope=s"			=> \$newHope,
 				"man"				=> \$man,
 				"help"				=> \$help);
 				
@@ -112,7 +101,17 @@ open( VCF , "<$incfile" )or die("Cannot open vcf file $incfile") ;
 
 
 # Create a new Excel workbook
-my $workbook = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'.xlsx' );
+#
+my $workbook;
+
+
+if($newHope eq "NO" || $newHope eq ""){
+	$workbook = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'.xlsx' );
+}else{
+	$workbook = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'_newHope.xlsx' );
+}
+
+
 
 # Create a "new hope Excel" aka NON-PASS / MPA_RANKING=8 
 #my $workbookNewHope = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'_newHope.xlsx' );
@@ -132,19 +131,6 @@ my $worksheetACMG = $workbook->add_worksheet('DS_ACMG');
 $worksheetACMG->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLineACMG = 0;
 
-
-
-#my $worksheetRAREnonPASS = $workbook->add_worksheet('Rare_nonPASS');
-#$worksheetRAREnonPASS->freeze_panes( 1, 0 );    # Freeze the first row
-#my $worksheetLineRAREnonPASS = 0;
-
-
-#$worksheetRAREnonPASS->autofilter('A1:AN1000'); # Add autofilter
-#$worksheetOMIM->autofilter('A1:AN1000'); # Add autofilter
-
-#$worksheetRAREnonPASS->autofilter('A1:AN1000'); # Add autofilter
-#$worksheetOMIM->autofilter('A1:AN1000'); # Add autofilter
-#$worksheetClinVarPatho->autofilter('A1:AN1000'); # Add autofilter
 
 
 
@@ -713,12 +699,20 @@ while( <VCF> ){
 		#select only x% pop freq 
 		#Use pop freq threshold as an input parameter (default = 2%)
 		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} >= $popFreqThr));  
+	
+
+
+		if($newHope eq "YES" || $newHope eq ""){
+			#remove NON PASS variant
+			next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
 		
-		#remove NON PASS variant
-		next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
-		
-		#remove MPA_Ranking = 8
-		next if( $dicoInfo{'MPA_ranking'} == 8);  
+			#remove MPA_Ranking = 8
+			next if( $dicoInfo{'MPA_ranking'} == 8);  
+		}else{
+			#Keep only NON PASS or PASS + MPA ranking = 8
+			next if ($finalSortData[$dicoColumnNbr{'FILTER'}] eq "PASS" && $dicoInfo{'MPA_ranking'} < 8);
+		}
+
 
 
 		#filling output line, check if INFO exists in the VCF
