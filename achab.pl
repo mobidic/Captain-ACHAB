@@ -188,7 +188,7 @@ if ($trio eq "YES"){
 my $current_gene= "";
 my $maxLine=0;
 if($phenolyzerFile ne ""){
-	open(PHENO , "<$phenolyzerFile") or die("Cannot open candidates file $phenolyzerFile") ;
+	open(PHENO , "<$phenolyzerFile") or die("Cannot open candidates file ."$phenolyzerFile) ;
 	print  STDERR "Processing phenolyzer file ... \n" ; 
 	while( <PHENO> ){
 		next if($_ =~/^Tuple number/);
@@ -219,7 +219,7 @@ if($phenolyzerFile ne ""){
 
 #create sheet for candidats
 if($candidates ne ""){
-	open( CANDIDATS , "<$candidates")or die("Cannot open candidates file $candidates") ;
+	open( CANDIDATS , "<$candidates")or die("Cannot open candidates file ."$candidates) ;
 	print  STDERR "Processing candidates file ... \n" ; 
 	while( <CANDIDATS> ){
 	  	$candidates_line = $_;
@@ -251,7 +251,7 @@ my @emptyArray = (" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," 
 my %dicoGeneSummary;
 
 if($geneSummary ne ""){
-	open( GENESUMMARY , "<$geneSummary")or die("Cannot open geneSummary file $geneSummary") ;
+	open( GENESUMMARY , "<$geneSummary")or die("Cannot open geneSummary file ."$geneSummary) ;
 	
 	print  STDERR "Processing geneSummary file ... \n" ; 
 	
@@ -275,7 +275,7 @@ my $pLI_Comment = "pLI - the probability of being loss-of-function intolerant (i
 
 
 if($pLIFile ne ""){
-	open( PLIFILE , "<$pLIFile")or die("Cannot open pLI file $pLIFile") ;
+	open( PLIFILE , "<$pLIFile")or die("Cannot open pLI file ."$pLIFile) ;
 	
 	print  STDERR "Processing pLI file ... \n" ; 
 	
@@ -350,11 +350,11 @@ my %dicoColumnNbr;
 $dicoColumnNbr{'MPA_ranking'}=				0;	#+ comment MPA scores and related scores 
 $dicoColumnNbr{'Phenolyzer'}=				1;	#Phenolyzer raw score + comment Normalized score 
 $dicoColumnNbr{'Gene.refGene'}=				2;  #Gene Name + comment pLi / Function_description / tissue specificity
-$dicoColumnNbr{'Phenotypes.refGene'}=		3;  #OMIM + comment Disease_description
-$dicoColumnNbr{'gnomAD_genome_ALL'}=		4;	#Pop Freq + comment ethny
+$dicoColumnNbr{'Phenotypes.refGene'}=			3;  #OMIM + comment Disease_description
+$dicoColumnNbr{'gnomAD_genome_ALL'}=			4;	#Pop Freq + comment ethny
 $dicoColumnNbr{'gnomAD_exome_ALL'}=			5;	#as well
-$dicoColumnNbr{'CLINSIG'}=					6;	#CLinvar
-$dicoColumnNbr{'InterVar_automated'}=		7;	#+ comment ACMG status
+$dicoColumnNbr{'CLINSIG'}=				6;	#CLinvar
+$dicoColumnNbr{'InterVar_automated'}=			7;	#+ comment ACMG status
 $dicoColumnNbr{'SecondHit-CNV'}=			8;	#TODO
 $dicoColumnNbr{'Func.refGene'}=				9;	# + comment ExonicFunc / AAChange / GeneDetail
 $dicoColumnNbr{'Genotype-'.$case}=			10;	# + comment qual / caller / DP AD AB
@@ -528,9 +528,9 @@ check the genes whether are for mutilfactor disorder. The reviewers suggeset to 
 );
 
 
-my @CommentFunc = ( 'ExonicFunc.refGene',
-					'AAChange.refGene',
-					'GeneDetail.refGene');
+my @CommentFunc = ( 	'ExonicFunc.refGene',
+			'AAChange.refGene',
+			'GeneDetail.refGene');
 
 
 my @CommentPhenotype = ( 'Disease_description.refGene');
@@ -547,7 +547,7 @@ my $previousGene ="";
 #############################################
 ##################   Start parsing VCF
 
-open( VCF , "<$incfile" )or die("Cannot open vcf file $incfile") ;
+open( VCF , "<$incfile" )or die("Cannot open vcf file ."$incfile) ;
 
 
 while( <VCF> ){
@@ -702,7 +702,7 @@ while( <VCF> ){
 	
 
 
-		if($newHope eq "YES" || $newHope eq ""){
+		if($newHope eq "NO" || $newHope eq ""){
 			#remove NON PASS variant
 			next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
 		
