@@ -1051,8 +1051,10 @@ while( <VCF> ){
 
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} =  "pLI = ".$dicoInfo{'pLi.refGene'}."\npRec = ".$dicoInfo{'pRec.refGene'}."\npNull = ".$dicoInfo{'pNull.refGene'} ."\n\n";
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  sprintf('#%2.2X%2.2X%2.2X',($dicoInfo{'pLi.refGene'}*255 + $dicoInfo{'pRec.refGene'}*255),($dicoInfo{'pRec.refGene'}*255 + $dicoInfo{'pNull.refGene'} * 255),0) ;
-
-        	$format_pLI = $workbook->add_format(bg_color => $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"color_format"});
+        		
+			
+			#$format_pLI = $workbook->add_format(bg_color => $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"color_format"});
+        		$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'});
 
 			if(defined $dicoInfo{'Missense_Z_score.refGene'} && $dicoInfo{'Missense_Z_score.refGene'} ne "." ){
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .=  "Missense Z-score = ".$dicoInfo{'Missense_Z_score.refGene'}."\n\n";
