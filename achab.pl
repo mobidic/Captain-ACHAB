@@ -68,20 +68,20 @@ my %hashFinalSortData;
 #$arguments = GetOptions( "vcf=s" => \$incfile ) or pod2usage(-vcf => "$0: argument required\n") ;
 
 GetOptions( 	"vcf=s"				=> \$incfile,
-				"case=s"			=> \$case,
-				"dad=s"				=> \$dad, 
-				"mum=s"				=> \$mum, 
-				"control=s"			=> \$control,
-				"trio=s"			=> \$trio,
-				"candidates=s"		=> \$candidates,
-#				"geneSummary=s"		=> \$geneSummary,
-#				"pLIFile=s"			=> \$pLIFile,  # no more used
-				"phenolyzerFile=s"	=> \$phenolyzerFile,
-				"popFreqThr=s"		=> \$popFreqThr, 
-				"customInfo=s"		=> \$customInfo, 
-				"newHope=s"			=> \$newHope,
-				"man"				=> \$man,
-				"help"				=> \$help);
+		"case=s"			=> \$case,
+		"dad=s"				=> \$dad, 
+		"mum=s"				=> \$mum, 
+		"control=s"			=> \$control,
+		"trio=s"			=> \$trio,
+		"candidates=s"			=> \$candidates,
+#		"geneSummary=s"			=> \$geneSummary,
+#		"pLIFile=s"			=> \$pLIFile,  # no more used
+		"phenolyzerFile=s"		=> \$phenolyzerFile,
+		"popFreqThr=s"			=> \$popFreqThr, 
+		"customInfo=s"			=> \$customInfo, 
+		"newHope=s"			=> \$newHope,
+		"man"				=> \$man,
+		"help"				=> \$help);
 				
 
 #check mandatory arguments
@@ -188,7 +188,7 @@ if ($trio eq "YES"){
 my $current_gene= "";
 my $maxLine=0;
 if($phenolyzerFile ne ""){
-	open(PHENO , "<$phenolyzerFile") or die("Cannot open candidates file ."$phenolyzerFile) ;
+	open(PHENO , "<$phenolyzerFile") or die("Cannot open candidates file ".$phenolyzerFile) ;
 	print  STDERR "Processing phenolyzer file ... \n" ; 
 	while( <PHENO> ){
 		next if($_ =~/^Tuple number/);
@@ -219,7 +219,7 @@ if($phenolyzerFile ne ""){
 
 #create sheet for candidats
 if($candidates ne ""){
-	open( CANDIDATS , "<$candidates")or die("Cannot open candidates file ."$candidates) ;
+	open( CANDIDATS , "<$candidates")or die("Cannot open candidates file ".$candidates) ;
 	print  STDERR "Processing candidates file ... \n" ; 
 	while( <CANDIDATS> ){
 	  	$candidates_line = $_;
@@ -251,7 +251,7 @@ my @emptyArray = (" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," 
 my %dicoGeneSummary;
 
 if($geneSummary ne ""){
-	open( GENESUMMARY , "<$geneSummary")or die("Cannot open geneSummary file ."$geneSummary) ;
+	open( GENESUMMARY , "<$geneSummary")or die("Cannot open geneSummary file ".$geneSummary) ;
 	
 	print  STDERR "Processing geneSummary file ... \n" ; 
 	
@@ -275,7 +275,7 @@ my $pLI_Comment = "pLI - the probability of being loss-of-function intolerant (i
 
 
 if($pLIFile ne ""){
-	open( PLIFILE , "<$pLIFile")or die("Cannot open pLI file ."$pLIFile) ;
+	open( PLIFILE , "<$pLIFile")or die("Cannot open pLI file ".$pLIFile) ;
 	
 	print  STDERR "Processing pLI file ... \n" ; 
 	
@@ -365,7 +365,7 @@ if($dad ne "" && $mum ne "" && $control ne ""){
 	
 	$dicoColumnNbr{'Genotype-'.$dad}=		11;
 	$dicoColumnNbr{'Genotype-'.$mum}=		12;
-	$dicoColumnNbr{'Genotype-'.$control}=	13;
+	$dicoColumnNbr{'Genotype-'.$control}=		13;
 
 	$dicoSamples{1}{'columnName'} = 'Genotype-'.$case ;
 	$dicoSamples{2}{'columnName'} = 'Genotype-'.$dad ;
@@ -547,7 +547,7 @@ my $previousGene ="";
 #############################################
 ##################   Start parsing VCF
 
-open( VCF , "<$incfile" )or die("Cannot open vcf file ."$incfile) ;
+open( VCF , "<$incfile" )or die("Cannot open vcf file ".$incfile) ;
 
 
 while( <VCF> ){
