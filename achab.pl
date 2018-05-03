@@ -3,7 +3,7 @@
 ##### achab.pl ####
 
 # Author : Thomas Guignard 2018
-# USAGE : achab.pl --vcf <vcf_file> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER="PASS" and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>
+# USAGE : achab.pl --vcf <vcf_file> --outDir <output directory (default = current dir)> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER="PASS" and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>
 #
 
 # Description : 
@@ -20,11 +20,11 @@ use Switch;
 #use Data::Dumper;
 
 #parameters
-my $man = "USAGE : \nachab.pl --vcf <vcf_file> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER=PASS and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>";
-my $help = "USAGE : \nachab.pl --vcf <vcf_file> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER=PASS and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>";
+my $man = "USAGE : \nachab.pl --vcf <vcf_file> --outDir <output directory (default = current dir)> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER=PASS and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>";
+my $help = "USAGE : \nachab.pl --vcf <vcf_file> --outDir <output directory (default = current dir)> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER=PASS and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>";
 my $current_line;
 my $incfile;
-#my $outfile;
+my $outDir = "";
 my $case = "";
 my $mum = "";
 my $control = "";
@@ -74,6 +74,7 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"control=s"			=> \$control,
 		"trio=s"			=> \$trio,
 		"candidates=s"			=> \$candidates,
+		"outDir=s"			=> \$outDir,
 #		"geneSummary=s"			=> \$geneSummary,
 #		"pLIFile=s"			=> \$pLIFile,  # no more used
 		"phenolyzerFile=s"		=> \$phenolyzerFile,
@@ -104,14 +105,15 @@ open( VCF , "<$incfile" )or die("Cannot open vcf file $incfile") ;
 #
 my $workbook;
 
-
-if($newHope eq "NO" || $newHope eq ""){
-	$workbook = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'.xlsx' );
-}else{
-	$workbook = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'_newHope.xlsx' );
+if ($outDir eq "" || -d $outDir) {
+	if($newHope eq "NO" || $newHope eq ""){
+		$workbook = Excel::Writer::XLSX->new( $outDir."/".$case."_".$dad."_".$mum."_".$control.'.xlsx' );
+	}else{
+		$workbook = Excel::Writer::XLSX->new( $outDir."/".$case."_".$dad."_".$mum."_".$control.'_newHope.xlsx' );
+	}
+}else {
+  die "No directory $outDir";
 }
-
-
 
 # Create a "new hope Excel" aka NON-PASS / MPA_RANKING=8 
 #my $workbookNewHope = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'_newHope.xlsx' );
