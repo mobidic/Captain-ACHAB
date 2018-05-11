@@ -140,6 +140,7 @@ Command line to use Captain ACHAB
                           --mum <mother_sample_name>  (required with trio option)
                         --customInfo  <info name (will be added in a new column)> 
                         --newHope (output only NON PASS or MPA_rank = 8 variants, default=output FILTER=PASS and MPAranking < 8 variants )>
+                        --help (print this command usage)
 
 ```
 
