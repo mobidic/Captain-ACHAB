@@ -3,8 +3,6 @@
 ##### achab.pl ####
 
 # Author : Thomas Guignard 2018
-# USAGE : achab.pl --vcf <vcf_file> --outDir <output directory (default = current dir)> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER="PASS" and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>
-#
 
 # Description : 
 # Create an User friendly Excel file from an MPA annotated VCF file. 
@@ -20,19 +18,21 @@ use Switch;
 #use Data::Dumper;
 
 #parameters
-my $man = "USAGE : \nachab.pl --vcf <vcf_file> --outDir <output directory (default = current dir)> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER=PASS and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>";
-my $help = "USAGE : \nachab.pl --vcf <vcf_file> --outDir <output directory (default = current dir)> --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name> --control <control_sample_name>   --trio <YES|NO> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01>  --customInfo  <info name (will be added in a new column)> --newHope <NO|YES (output FILTER=PASS and MPAranking < 8 variants | output only NON PASS or MPA_rank = 8 variants )>";
+my $man = "USAGE : \nperl achab.pl --vcf <vcf_file> --outDir <output directory (default = current dir)> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01> --trio (requires case dad and mum option to be filled) --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name>  --customInfo  <info name (will be added in a new column)> --newHope (output only NON PASS or MPA_rank = 8 variants, default=output FILTER=PASS and MPAranking < 8 variants )>";
+my $help;
 my $current_line;
 my $incfile;
 my $outDir = ".";
 my $case = "";
 my $mum = "";
-my $control = "";
+#my $control = "";
 my $dad = "";
 my $caller = "";
-my $trio = "";
+my $trio;
 my $popFreqThr = "";
-my $newHope = "";
+my $newHope;
+my $sampleNames = "";
+my @sampleList;
 
 #stuff for files
 my $candidates = "";
@@ -71,33 +71,125 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"case=s"			=> \$case,
 		"dad=s"				=> \$dad, 
 		"mum=s"				=> \$mum, 
-		"control=s"			=> \$control,
-		"trio=s"			=> \$trio,
+		"trio"				=> \$trio,
 		"candidates=s"			=> \$candidates,
 		"outDir=s"			=> \$outDir,
-#		"geneSummary=s"			=> \$geneSummary,
-#		"pLIFile=s"			=> \$pLIFile,  # no more used
 		"phenolyzerFile=s"		=> \$phenolyzerFile,
 		"popFreqThr=s"			=> \$popFreqThr, 
 		"customInfo=s"			=> \$customInfo, 
-		"newHope=s"			=> \$newHope,
-		"man"				=> \$man,
-		"help"				=> \$help);
+		"newHope"			=> \$newHope,
+		"help|h"				=> \$help);
 				
 
 #check mandatory arguments
 
-			#define popFreqThr
+if(defined $help){
+	die("$man");
+}
+
+#define popFreqThr
 if( $popFreqThr eq ""){
 	$popFreqThr = 0.01;
 	
 }
 
-			 
+
+
+#check sample list param
+if(defined $trio && ($case eq "" || $dad eq "" || $mum eq "")){	
+	die("TRIO option requires 3 sample names. Please, give --case, --dad and --mum sample name arguments.\n");
+}
+			
+			
+print  STDERR "Starting a new fishing trip ... \n" ; 
 print  STDERR "Processing vcf file ... \n" ; 
 
 
 open( VCF , "<$incfile" )or die("Cannot open vcf file $incfile") ;
+
+
+#TODO check if header contains required INFO
+#Parse VCF header to fill the dictionnary of parameters
+print STDERR "Parsing VCF header in order to get sample names and to check if required informations are present ... \n";
+my %dicoParam;
+
+while( <VCF> ){
+  	$current_line = $_;
+		
+	chomp $current_line;
+      
+    #filling dicoParam with VCF header INFO and FORMAT 
+
+    if ($current_line=~/^##/){
+
+
+		  unless ($current_line=~/Description=/){ next }
+      #DEBUG print STDERR "Header line\n";
+
+      if ($current_line =~ /ID=(.+?),.*?Description="(.+?)"/){
+    
+          $dicoParam{$1}= $2;
+		  #DEBUG      print STDERR "info : ". $1 . "\tdescription: ". $2."\n";
+			
+
+			    next;
+      
+      }else {print STDERR "pattern not found in this line: ".$current_line ."\n";next} 
+			
+	}elsif($current_line=~/^#CHROM/){
+		#check sample names or die
+	
+		
+		if (defined $trio){
+			#check if case sample name is found
+			unless ($current_line=~/\Q$case/){die("$case is not found as a sample in the VCF, please check case name.\n$current_line\n")}
+			unless ($current_line=~/\Q$dad/){die("$dad is not found as a sample in the VCF, please check dad name.\n$current_line\n")}
+			unless ($current_line=~/\Q$mum/){die("$mum is not found as a sample in the VCF, please check mum name.\n$current_line\n")}
+		}
+
+		@line = split (/\t/ , $current_line);
+
+
+		for( my $sampleIndex = 9 ; $sampleIndex < scalar @line; $sampleIndex++){
+			
+			print STDERR "Found Sample ".$line[$sampleIndex]."\n";
+			push @sampleList, $line[$sampleIndex]; 
+			
+			#for each final position for sample 
+#			foreach my $finCol (keys %dicoSamples){
+
+    	    #DEBUG
+					
+#				if ($dicoSamples{$finCol}{'columnName'} eq "Genotype-".$line[$sampleIndex] ){
+#					$dicoSamples{$finCol}{'columnIndex'} =  $sampleIndex;				
+#					last;
+#				}
+#			}
+
+#			foreach my $name (@sampleList)
+				#if($line[$sampleIndex]
+				
+			
+		}	
+
+		if($case eq ""){
+			$case = $sampleList[0];
+		}
+		#exclude to treat trio with too much sample
+		print STDERR "\nTotal Samples : ".scalar @sampleList."\n";
+
+		if(scalar @sampleList > 3 && defined $trio){
+			die("Found more than 3 samples. TRIO analysis is not supported with more than 3 samples.\n");
+		}
+
+
+
+	}else {last}
+
+}
+close(VCF);
+
+
 
 
 
@@ -106,20 +198,19 @@ open( VCF , "<$incfile" )or die("Cannot open vcf file $incfile") ;
 my $workbook;
 
 if ($outDir eq "." || -d $outDir) {
-	if($newHope eq "NO" || $newHope eq ""){
-		$workbook = Excel::Writer::XLSX->new( $outDir."/".$case."_".$dad."_".$mum."_".$control.'.xlsx' );
+	if(defined $newHope){
+		# Create a "new hope Excel" aka NON-PASS + MPA_RANKING=8 variants 
+		$workbook = Excel::Writer::XLSX->new( $outDir."/achab_catch_newHope.xlsx" );
 	}else{
-		$workbook = Excel::Writer::XLSX->new( $outDir."/".$case."_".$dad."_".$mum."_".$control.'_newHope.xlsx' );
+		$workbook = Excel::Writer::XLSX->new( $outDir."/achab_catch.xlsx" );
 	}
 }else {
-  die "No directory $outDir";
+ 	die("No directory $outDir");
 }
 
-# Create a "new hope Excel" aka NON-PASS / MPA_RANKING=8 
-#my $workbookNewHope = Excel::Writer::XLSX->new( $case."_".$dad."_".$mum."_".$control.'_newHope.xlsx' );
 
-#create color background for pLI values
-my $format_pLI = $workbook->add_format();
+#create default color background when pLI values are absent
+my $format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
 #$format_pLI -> set_pattern();
 
 
@@ -157,7 +248,7 @@ my $worksheetLineDELHMZ;
 
 
 #create additionnal sheet in trio analysis
-if ($trio eq "YES"){
+if (defined $trio){
 	$worksheetHTZcompo = $workbook->add_worksheet('HTZ_compo');
 	$worksheetLineHTZcompo = 0;
 	$worksheetHTZcompo->freeze_panes( 1, 0 );    # Freeze the first row
@@ -302,45 +393,11 @@ if($pLIFile ne ""){
 
  
 
-#TODO check if header contains required INFO
-#Parse VCF header to fill the dictionnary of parameters
-print STDERR "Parsing VCF header to check if required informations are present ... \n";
-my %dicoParam;
-
-while( <VCF> ){
-  	$current_line = $_;
-		
-      
-    #filling dicoParam with VCF header INFO and FORMAT 
-
-    if ($current_line=~/^##/){
-
-
-		  unless ($current_line=~/Description=/){ next }
-			chomp $current_line;
-      #DEBUG print STDERR "Header line\n";
-
-      if ($current_line =~ /ID=(.+?),.*?Description="(.+?)"/){
-    
-          $dicoParam{$1}= $2;
-		  #DEBUG      print STDERR "info : ". $1 . "\tdescription: ". $2."\n";
-			
-
-			    next;
-      
-      }else {print STDERR "pattern not found in this line: ".$current_line ."\n";next} 
-		
-    }else {last}
-
-}
-close(VCF);
-
-
-
-
 
 #counter for shifting columns according to nbr of sample
-my $cmpt = 0;
+#my $cmpt = 0;
+
+my $cmpt = scalar @sampleList;
 
 
 #dico for sample sorting (index / dad / mum / control)
@@ -359,61 +416,31 @@ $dicoColumnNbr{'CLINSIG'}=				6;	#CLinvar
 $dicoColumnNbr{'InterVar_automated'}=			7;	#+ comment ACMG status
 $dicoColumnNbr{'SecondHit-CNV'}=			8;	#TODO
 $dicoColumnNbr{'Func.refGene'}=				9;	# + comment ExonicFunc / AAChange / GeneDetail
-$dicoColumnNbr{'Genotype-'.$case}=			10;	# + comment qual / caller / DP AD AB
+#$dicoColumnNbr{'Genotype-'.$case}=			10;	# + comment qual / caller / DP AD AB
 
 
-if($dad ne "" && $mum ne "" && $control ne ""){
-	$cmpt = 4;
+
+if (defined $trio){
 	
-	$dicoColumnNbr{'Genotype-'.$dad}=		11;
-	$dicoColumnNbr{'Genotype-'.$mum}=		12;
-	$dicoColumnNbr{'Genotype-'.$control}=		13;
-
-	$dicoSamples{1}{'columnName'} = 'Genotype-'.$case ;
-	$dicoSamples{2}{'columnName'} = 'Genotype-'.$dad ;
-	$dicoSamples{3}{'columnName'} = 'Genotype-'.$mum ;
-	$dicoSamples{4}{'columnName'} = 'Genotype-'.$control ;
-
-
-
-
-
-}else{
-	if( $mum ne "" && $dad ne ""){
-		$cmpt = 3;
-		$dicoColumnNbr{'Genotype-'.$dad}=	11;
-		$dicoColumnNbr{'Genotype-'.$mum}=	12;
+		$dicoColumnNbr{'Genotype-'.$case}=		10;
+		$dicoColumnNbr{'Genotype-'.$dad}=		11;
+		$dicoColumnNbr{'Genotype-'.$mum}=		12;
 
 		$dicoSamples{1}{'columnName'} = 'Genotype-'.$case ;
 		$dicoSamples{2}{'columnName'} = 'Genotype-'.$dad ;
 		$dicoSamples{3}{'columnName'} = 'Genotype-'.$mum ;
 
-
-	}else{
-		if( $dad ne ""){
-			$cmpt = 2;
-			$dicoColumnNbr{'Genotype-'.$dad}=11;
-		
-			$dicoSamples{1}{'columnName'} = 'Genotype-'.$case ;
-			$dicoSamples{2}{'columnName'} = 'Genotype-'.$dad ;
-		
-		
-		}
-		if( $mum ne ""){
-			$cmpt= 2;
-			$dicoColumnNbr{'Genotype-'.$mum}=11;
-		
-			$dicoSamples{1}{'columnName'} = 'Genotype-'.$case ;
-			$dicoSamples{2}{'columnName'} = 'Genotype-'.$mum ;
-
-
-		}
-		if( $mum eq "" && $dad eq ""){
-			$cmpt= 1;
-			$dicoSamples{1}{'columnName'} = 'Genotype-'.$case ;
 	
+}else{
+
+	for( my $i = 0 ; $i < scalar @sampleList; $i++){
+	
+		$dicoColumnNbr{'Genotype-'.$sampleList[$i]}=			10+$i;	# + comment qual / caller / DP AD AB
+		$dicoSamples{$i+1}{'columnName'} = 'Genotype-'.$sampleList[$i] ;
 	}
+
 }
+
 
 $dicoColumnNbr{'#CHROM'}=	10+$cmpt ;
 $dicoColumnNbr{'POS'}=		11+$cmpt ;
@@ -544,7 +571,8 @@ my @CommentPhenotype = ( 'Disease_description.refGene');
 
 my %dicoGeneForHTZcompo;
 my $previousGene ="";
-
+$dicoGeneForHTZcompo{$previousGene}{'ok'}=0;
+$dicoGeneForHTZcompo{$previousGene}{'cnt'}=0;
 
 #############################################
 ##################   Start parsing VCF
@@ -588,7 +616,13 @@ while( <VCF> ){
 					last;
 				}
 			}
-		}
+
+#			foreach my $name (@sampleList)
+				#if($line[$sampleIndex]
+				
+			
+		}	
+	
     
     
 
@@ -610,7 +644,7 @@ while( <VCF> ){
 
 
 			#FILLING COLUMN TITLES FOR TRIO SHEETS
-		if ($trio eq "YES"){
+		if (defined $trio){
 			$worksheetHTZcompo->write_row( 0, 0, \@columnTitles );
 			$worksheetAR->write_row( 0, 0, \@columnTitles );
 			$worksheetSNPmumVsCNVdad->write_row( 0, 0, \@columnTitles );
@@ -704,15 +738,15 @@ while( <VCF> ){
 	
 
 
-		if($newHope eq "NO" || $newHope eq ""){
+		if(defined $newHope){
+			#Keep only NON PASS or PASS + MPA ranking = 8
+			next if ($finalSortData[$dicoColumnNbr{'FILTER'}] eq "PASS" && $dicoInfo{'MPA_ranking'} < 8);
+		}else{
 			#remove NON PASS variant
 			next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
 		
 			#remove MPA_Ranking = 8
 			next if( $dicoInfo{'MPA_ranking'} == 8);  
-		}else{
-			#Keep only NON PASS or PASS + MPA ranking = 8
-			next if ($finalSortData[$dicoColumnNbr{'FILTER'}] eq "PASS" && $dicoInfo{'MPA_ranking'} < 8);
 		}
 
 
@@ -738,7 +772,7 @@ while( <VCF> ){
 
 			my @geneList = split(';', $finalSortData[$dicoColumnNbr{'Gene.refGene'}] );	
 			foreach my $geneName (@geneList){
-				#if (defined $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} ){
+				#if (defined $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
 				if (defined $phenolyzerGene{$geneName} ){
 					$finalSortData[$dicoColumnNbr{'Phenolyzer'}] .= $phenolyzerGene{$geneName}{'Raw'}."\t";
 				}
@@ -759,7 +793,7 @@ while( <VCF> ){
 				$commentMPAscore .= $keys."\n";
 			}
 			
-			#refine MPA_rank for rank 7 missense 
+			#refine MPA_rank for rank 7 missense with MPA final score  or  for other ranking with pLI
 			if($keys eq "MPA_final_score" &&  $finalSortData[$dicoColumnNbr{'MPA_ranking'}] == 7 ){
 				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (10-$dicoInfo{$keys})/100;
 				#print $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\n";
@@ -767,7 +801,15 @@ while( <VCF> ){
 			}
 
 		}
-		
+
+		#refine MPA_rank  with pLI
+		if(defined $dicoInfo{"pLi.refGene"} && $dicoInfo{"pLi.refGene"} ne "." ){
+				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.001-(($dicoInfo{"pLi.refGene"}/1000 +  $dicoInfo{"pRec.refGene"}/10000 + $dicoInfo{"pNull.refGene"}/100000)) ;
+				#print $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\n";
+			
+		}else{
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.001;
+		}
 		
 		#GNOMAD_EXOME COMMENT
 		#create string with array
@@ -811,6 +853,8 @@ while( <VCF> ){
 		$commentPhenotype = "";
 		foreach my $keys (@CommentPhenotype){
 			if (defined $dicoInfo{$keys} ){
+
+				$dicoInfo{$keys} =~ s/_DISEASE:/\n\nDISEASE:/g;
 				$commentPhenotype .= $keys.":\n ".$dicoInfo{$keys}."\n\n";
 			}
 		}
@@ -835,7 +879,7 @@ while( <VCF> ){
 			#print STDERR $current_line ."\n";
 			#exit 1; 
 		}else{
-			print STDERR "The Caller used for this line is unknown. Treating line is a risky business. This line won't be treated.\n";
+			print STDERR "The Format of the Caller used for this line is unknown. Processing is a risky business. This line won't be processed.\n";
 			print STDERR $current_line ."\n";
 			next;
 			#exit 1; 
@@ -989,14 +1033,14 @@ while( <VCF> ){
 			foreach my $geneName (@geneList){
 
 				#ACMG
-				#if(defined $ACMGgene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} ){
+				#if(defined $ACMGgene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
 				if(defined $ACMGgene{$geneName} ){
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} = "ACMG";
 				}
 		
 				#CANDIDATES
 				if($candidates ne ""){
-					#if(defined $candidateGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} ){
+					#if(defined $candidateGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
 					if(defined $candidateGene{$geneName} ){
 						$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#CANDIDATES";
 				
@@ -1007,7 +1051,7 @@ while( <VCF> ){
 				#PHENOLYZER COMMENT
 				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} = "";
 				
-				#if(defined  $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}){
+				#if(defined  $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]})
 				if(defined  $phenolyzerGene{$geneName}){
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} .= $phenolyzerGene{$geneName}{'comment'}."\n\n"  ;
 
@@ -1024,7 +1068,7 @@ while( <VCF> ){
 
 
 ##########additionnal analysis in TRIO context according to family genotype
-			if ($trio eq "YES"){
+			if (defined $trio){
 			
 				switch ($familyGenotype){
 					#Find de novo
@@ -1063,8 +1107,9 @@ while( <VCF> ){
 		}else{	
 			
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} =  "." ;
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  '#FFFFFF' ;
 			
-			$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
+			#$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
 		}
 
 
@@ -1072,8 +1117,8 @@ while( <VCF> ){
 		if(defined $dicoInfo{'Function_description.refGene'}  && $dicoInfo{'Function_description.refGene'} ne "." ){
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .= "Function Description:\n".$dicoInfo{'Function_description.refGene'}."\n\n"; 
 			
-			if(defined $dicoInfo{'Tissu_specificity(Uniprot).refGene'} && $dicoInfo{'Tissu_specificity(Uniprot).refGene'} ne "."  ){
-			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .= "Tissu specificity:\n".$dicoInfo{'Tissu_specificity(Uniprot).refGene'}."\n"; 	
+			if(defined $dicoInfo{'Tissue_specificity(Uniprot).refGene'} && $dicoInfo{'Tissue_specificity(Uniprot).refGene'} ne "."  ){
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .= "Tissue specificity:\n".$dicoInfo{'Tissue_specificity(Uniprot).refGene'}."\n"; 	
 			} 
 
 		} 
@@ -1098,10 +1143,10 @@ while( <VCF> ){
 
 
 ###############	#additionnal analysis in TRIO context
-			if ($trio eq "YES"){
+			if (defined $trio){
 
-		
-				#DEBUG print $familyGenotype."\n";
+						
+				#DEBUG	print $familyGenotype."\t".$format_pLI."\n";
 
 				#Find HTZ composite
 				if ($familyGenotype eq "_0/1_0/1_0/0_" || $familyGenotype eq "_0/1_0/0_0/1_"){	
@@ -1183,10 +1228,11 @@ while( <VCF> ){
 																																									$previousGene = $finalSortData[$dicoColumnNbr{'Gene.refGene'}];
 						
 						}
-					}
 
-				}#END IF HTZ COMPO
-			
+					}#END IF HTZ COMPO genotype
+
+
+#				}			
 			}# END IF TRIO
 
 }#END WHILE VCF
@@ -1201,7 +1247,7 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 	foreach my $variant ( keys %{$hashFinalSortData{$rank}}){
 
 		#print $variant."\n";
-		$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
+#		$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
 
 		#create reference of Hashes
 		my $hashTemp = $hashFinalSortData{$rank}{$variant};
@@ -1278,7 +1324,7 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 #################### TRIO ################
 ##############################################################
 		
-		if($trio eq "YES"){
+		if(defined $trio){
 			
 ##############################################################
 ################ DENOVO  ######################
@@ -1360,7 +1406,7 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 
 $worksheet->autofilter('A1:Z'.$worksheetLine); # Add autofilter until the end
 
-if($trio eq "YES"){
+if(defined $trio){
 
 	$worksheetHTZcompo->autofilter('A1:Z'.$worksheetLineHTZcompo); # Add autofilter
   
@@ -1427,7 +1473,7 @@ sub writeThisSheet {
 			
 			if ($hashTemp{'commentPhenotype'} ne ""){
 
-				$worksheet->write_comment( $worksheetLine,$hashColumn{'Phenotypes.refGene'}, $hashTemp{'commentPhenotype'} ,x_scale => 5, y_scale => 5  );
+				$worksheet->write_comment( $worksheetLine,$hashColumn{'Phenotypes.refGene'}, $hashTemp{'commentPhenotype'} ,x_scale => 7, y_scale => 5  );
 			}
 			
 			if ($hashTemp{'commentPhenolyzer'} ne ""){
@@ -1435,9 +1481,8 @@ sub writeThisSheet {
 			}
 
 			if ($hashTemp{'commentInterVar'} ne ""){
-				$worksheet->write_comment( $worksheetLine,$hashColumn{'InterVar_automated'}, $hashTemp{'commentInterVar'} ,x_scale => 5, y_scale => 5  );
+				$worksheet->write_comment( $worksheetLine,$hashColumn{'InterVar_automated'}, $hashTemp{'commentInterVar'} ,x_scale => 7, y_scale => 5  );
 			}
-
 
 
 			if ($hashTemp{'commentpLI'} ne "."){
