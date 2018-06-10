@@ -18,43 +18,54 @@ use Switch;
 #use Data::Dumper;
 
 #parameters
-my $man = "USAGE : \nperl achab.pl --vcf <vcf_file> --outDir <output directory (default = current dir)> --candidates <file with gene symbol of interest>  --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01> --trio (requires case dad and mum option to be filled) --case <index_sample_name> --dad <father_sample_name> --mum <mother_sample_name>  --customInfo  <info name (will be added in a new column)> --newHope (output only NON PASS or MPA_rank = 8 variants, default=output FILTER=PASS and MPAranking < 8 variants )>";
+my $man = "USAGE : \nperl achab.pl 
+\n--vcf <vcf_file> 
+\n--outDir <output directory (default = current dir)> 
+\n--candidates <file with gene symbol of interest>  
+\n--phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   
+\n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01> 
+\n--trio (requires case dad and mum option to be filled) 
+\n\t--case <index_sample_name> 
+\n\t--dad <father_sample_name> 
+\n\t--mum <mother_sample_name>  
+\n--customInfoList  <comma separated list of vcf-info names (will be added in a new column)>  
+\n--filterList <comma separated list of VCF FILTER to output (default='PASS', included )>   
+\n--cnvGeneList <File with gene symbol + annotation , involved by parallel CNV calling >
+\n--newHope (output only NON PASS or MPA_rank = 8 variants, default=output FILTER=PASS and MPAranking < 8 variants )>";
+
 my $help;
 my $current_line;
-my $incfile;
+my $incfile = "";
 my $outDir = ".";
 my $case = "";
 my $mum = "";
-#my $control = "";
 my $dad = "";
 my $caller = "";
 my $trio;
 my $popFreqThr = "";
+my $filterList = "";
+my @filterArray;
 my $newHope;
 my $sampleNames = "";
 my @sampleList;
+my $customInfoList = "";
+my @custInfList;
 
 #stuff for files
 my $candidates = "";
 my %candidateGene;
 my $candidates_line;
 
-my $geneSummary="";
-my $geneSummary_Line;
-my @geneSummaryList;
-my $geneSummaryConcat;
-
-my $pLIFile = "";
-my $pLI_Line;
-my @pLI_List;
-my $pLI_values;  
-
 my $phenolyzerFile = "";
 my $phenolyzer_Line;
 my @phenolyzer_List;
 my %phenolyzerGene;
 
-my $customInfo = "";
+my $cnvGeneList = "";
+my %cnvGene;
+my $cnvGene_Line;
+my @cnvGene_List;
+
 
 #vcf parsing and output
 my @line;
@@ -72,18 +83,19 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"dad=s"				=> \$dad, 
 		"mum=s"				=> \$mum, 
 		"trio"				=> \$trio,
-		"candidates=s"			=> \$candidates,
+		"candidates:s"			=> \$candidates,
 		"outDir=s"			=> \$outDir,
 		"phenolyzerFile=s"		=> \$phenolyzerFile,
 		"popFreqThr=s"			=> \$popFreqThr, 
-		"customInfo=s"			=> \$customInfo, 
+		"customInfoList=s"			=> \$customInfoList, 
+		"filterList=s"			=> \$filterList,				
+		"cnvGeneList:s"			=> \$cnvGeneList,
 		"newHope"			=> \$newHope,
 		"help|h"				=> \$help);
 				
 
 #check mandatory arguments
-
-if(defined $help){
+if(defined $help || $incfile eq ""){
 	die("$man");
 }
 
@@ -92,6 +104,13 @@ if( $popFreqThr eq ""){
 	$popFreqThr = 0.01;
 	
 }
+
+#define filter List
+if($filterList ne ""){
+	@filterArray = split(/,/ , $filterList)
+}
+#default filter is PASS
+unshift @filterArray, "PASS";
 
 
 
@@ -191,8 +210,6 @@ close(VCF);
 
 
 
-
-
 # Create a new Excel workbook
 #
 my $workbook;
@@ -218,7 +235,6 @@ my $format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
 my $worksheet = $workbook->add_worksheet('ALL_'.$popFreqThr);
 $worksheet->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLine = 0;
-#$worksheet->autofilter('A1:AN5000'); # Add autofilter
 
 my $worksheetACMG = $workbook->add_worksheet('DS_ACMG');
 $worksheetACMG->freeze_panes( 1, 0 );    # Freeze the first row
@@ -236,7 +252,7 @@ my $worksheetSNPmumVsCNVdad ;
 my $worksheetSNPdadVsCNVmum;
 my $worksheetDENOVO;
 my $worksheetCandidats;
-my $worksheetDELHMZ;
+#my $worksheetDELHMZ;
 
 my $worksheetLineHTZcompo ;
 my $worksheetLineAR ; 
@@ -244,7 +260,7 @@ my $worksheetLineSNPmumVsCNVdad ;
 my $worksheetLineSNPdadVsCNVmum ;
 my $worksheetLineDENOVO ;
 my $worksheetLineCandidats;
-my $worksheetLineDELHMZ;
+#my $worksheetLineDELHMZ;
 
 
 #create additionnal sheet in trio analysis
@@ -276,6 +292,9 @@ if (defined $trio){
 		
 
 }
+
+
+
 
 #get data from phenolyzer output (predicted_gene_score)
 my $current_gene= "";
@@ -324,13 +343,37 @@ if($candidates ne ""){
 	close(CANDIDATS);
 	$worksheetCandidats = $workbook->add_worksheet('Candidats');
 	$worksheetCandidats->freeze_panes( 1, 0 );    # Freeze the first row
-	#$worksheetCandidats->autofilter('A1:AN1000'); # Add autofilter
+}
+
+
+#get gene involved in CNV
+if ($cnvGeneList ne ""){
+	open( CNVGENES , "<$cnvGeneList")or die("Cannot open candidates file ".$cnvGeneList) ;
+	print  STDERR "Processing CNV Gene file ... \n" ; 
+	while( <CNVGENES> ){
+	  	$cnvGene_Line = $_;
+		chomp $cnvGene_Line;
+		@cnvGene_List = split( /\t/, $cnvGene_Line);
+		$current_gene = $cnvGene_List[0];
+		if (defined $cnvGene{$current_gene}){
+				#nothing to do
+		}else{	
+			$cnvGene{$current_gene} = "CNV : ".$current_gene;
+		}
+
+		if(defined $cnvGene_List[1]){
+				$cnvGene{$current_gene} .= " \n=> ".$cnvGene_List[1];
+		}
+			
+	}
+	close(CNVGENES);
+
 }
 
 
 
+
 #Hash of ACMG incidentalome genes
-#my @ACMGlist = ("ACTA2","ACTC1","APC","APOB","ATP7B","BMPR1A","BRCA1","BRCA2","CACNA1S","COL3A1","DSC2","DSG2","DSP","FBN1","GLA","KCNH2","KCNQ1","LDLR","LMNA","MEN1","MLH1","MSH2","MSH6","MUTYH","MYBPC3","MYH11","MYH7","MYL2","MYL3","NF2","OTC","PCSK9","PKP2","PMS2","PRKAG2","PTEN","RB1","RET","RYR1","RYR2","SCN5A","SDHAF2","SDHB","SDHC","SDHD","SMAD3","SMAD4","STK11","TGFBR1","TGFBR2","TMEM43","TNNI3","TNNT2","TP53","TPM1","TSC1","TSC2","VHL","WT1");
 my %ACMGgene = ("ACTA2" =>1,"ACTC1" =>1,"APC" =>1,"APOB" =>1,"ATP7B" =>1,"BMPR1A" =>1,"BRCA1" =>1,"BRCA2" =>1,"CACNA1S" =>1,"COL3A1" =>1,"DSC2" =>1,"DSG2" =>1,"DSP" =>1,"FBN1" =>1,"GLA" =>1,"KCNH2" =>1,"KCNQ1" =>1,"LDLR" =>1,"LMNA" =>1,"MEN1" =>1,"MLH1" =>1,"MSH2" =>1,"MSH6" =>1,"MUTYH" =>1,"MYBPC3" =>1,"MYH11" =>1,"MYH7" =>1,"MYL2" =>1,"MYL3" =>1,"NF2" =>1,"OTC" =>1,"PCSK9" =>1,"PKP2" =>1,"PMS2" =>1,"PRKAG2" =>1,"PTEN" =>1,"RB1" =>1,"RET" =>1,"RYR1" =>1,"RYR2" =>1,"SCN5A" =>1,"SDHAF2" =>1,"SDHB" =>1,"SDHC" =>1,"SDHD" =>1,"SMAD3" =>1,"SMAD4" =>1,"STK11" =>1,"TGFBR1" =>1,"TGFBR2" =>1,"TMEM43" =>1,"TNNI3" =>1,"TNNT2" =>1,"TP53" =>1,"TPM1" =>1,"TSC1" =>1,"TSC2" =>1,"VHL" =>1,"WT1"=>1);
 
 
@@ -340,62 +383,12 @@ my %ACMGgene = ("ACTA2" =>1,"ACTC1" =>1,"APC" =>1,"APOB" =>1,"ATP7B" =>1,"BMPR1A
 my @emptyArray = (" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "); 
 
 
-#create dico of gene summary from refseq
-my %dicoGeneSummary;
-
-if($geneSummary ne ""){
-	open( GENESUMMARY , "<$geneSummary")or die("Cannot open geneSummary file ".$geneSummary) ;
-	
-	print  STDERR "Processing geneSummary file ... \n" ; 
-	
-	while( <GENESUMMARY> ){
-	  	$geneSummary_Line = $_;
-		chomp $geneSummary_Line;
-		@geneSummaryList = split( /\t/, $geneSummary_Line);	
-		$dicoGeneSummary{$geneSummaryList[0]} = $geneSummaryList[1];
-				
-	}
-	close(GENESUMMARY);
-}
-
-
-
-
-#create dico of ExAC pLI data / gene
-my %dicopLI;
-
-my $pLI_Comment = "pLI - the probability of being loss-of-function intolerant (intolerant of both heterozygous and homozygous lof variants)\npRec - the probability of being intolerant of homozygous, but not heterozygous lof variants\npNull - the probability of being tolerant of both heterozygous and homozygous lof variants";
-
-
-if($pLIFile ne ""){
-	open( PLIFILE , "<$pLIFile")or die("Cannot open pLI file ".$pLIFile) ;
-	
-	print  STDERR "Processing pLI file ... \n" ; 
-	
-	while( <PLIFILE> ){
-	  	$pLI_Line = $_;
-		next if ($pLI_Line=~/^transcript/);
-		chomp $pLI_Line;
-
-		@pLI_List = split( /\t/, $pLI_Line);	
-		$dicopLI{$pLI_List[1]}{"comment"} = "pLI = ".$pLI_List[19]."\npRec = ".$pLI_List[20]."\npNull = ".$pLI_List[21]."\nmis_Zscore = ".$pLI_List[18];
-		$dicopLI{$pLI_List[1]}{"pLI"} = $pLI_List[19];
-		$dicopLI{$pLI_List[1]}{"pRec"} = $pLI_List[20];
-		$dicopLI{$pLI_List[1]}{"pNull"} = $pLI_List[21];
-
-		$dicopLI{$pLI_List[1]}{"color_format"} = sprintf('#%2.2X%2.2X%2.2X',($dicopLI{$pLI_List[1]}{"pLI"}*255 + $dicopLI{$pLI_List[1]}{"pRec"}*255),($dicopLI{$pLI_List[1]}{"pRec"}*255 + $dicopLI{$pLI_List[1]}{"pNull"} * 255),0);
-				
-	}
-	close(PLIFILE);
-}
-
 
 
  
 
 
 #counter for shifting columns according to nbr of sample
-#my $cmpt = 0;
 
 my $cmpt = scalar @sampleList;
 
@@ -416,7 +409,6 @@ $dicoColumnNbr{'CLINSIG'}=				6;	#CLinvar
 $dicoColumnNbr{'InterVar_automated'}=			7;	#+ comment ACMG status
 $dicoColumnNbr{'SecondHit-CNV'}=			8;	#TODO
 $dicoColumnNbr{'Func.refGene'}=				9;	# + comment ExonicFunc / AAChange / GeneDetail
-#$dicoColumnNbr{'Genotype-'.$case}=			10;	# + comment qual / caller / DP AD AB
 
 
 
@@ -449,22 +441,25 @@ $dicoColumnNbr{'REF'}=		13+$cmpt ;
 $dicoColumnNbr{'ALT'}=		14+$cmpt ;
 $dicoColumnNbr{'FILTER'}=	15+$cmpt ;
 
-#Add custom Info in a new column
-if($customInfo ne ""){
-	$dicoColumnNbr{$customInfo}=	16+$cmpt ;
+#Add custom Info in additionnal columns
+my $lastColumn = 16+$cmpt; 
+
+if($customInfoList ne ""){
+	@custInfList = split(/,/, $customInfoList);
+	foreach my $customInfo (@custInfList){
+		$dicoColumnNbr{$customInfo} = $lastColumn ;
+		$lastColumn++;
+	}
 }
 
 
 
 #Define column title order
-#my $columnTitles="MPA\tGene\tPhenotypes\tDisease\tMIM\tgnomAD_genome_ALL\tgnomAD_exome_ALL\tCLinvar\tSecondHit_CNV\t"
-
 my @columnTitles;
 foreach my $key  (sort { $dicoColumnNbr{$a} <=> $dicoColumnNbr{$b} } keys %dicoColumnNbr)  {
 	push @columnTitles,  $key;
 	#DEBUG print STDERR $key."\n";
 }
-
 
 
 #final strings for comment
@@ -497,6 +492,8 @@ my @CommentMPA_score = ("MPA_final_score",
 						'Polyphen2_HVAR_pred',
 						'MutationTaster_pred',
 						'fathmm-MKL_coding_pred');
+
+my $pLI_Comment = "pLI - the probability of being loss-of-function intolerant (intolerant of both heterozygous and homozygous lof variants)\npRec - the probability of being intolerant of homozygous, but not heterozygous lof variants\npNull - the probability of being tolerant of both heterozygous and homozygous lof variants";
 
 my @CommentGnomadGenome = ('gnomAD_genome_ALL',
                            'gnomAD_genome_AFR',
@@ -563,6 +560,43 @@ my @CommentFunc = ( 	'ExonicFunc.refGene',
 
 
 my @CommentPhenotype = ( 'Disease_description.refGene');
+
+
+#########FILLING COLUMN TITLES FOR SHEETS
+$worksheet->write_row( 0, 0, \@columnTitles );
+$worksheetACMG->write_row( 0, 0, \@columnTitles );
+		
+#write comment for pLI
+$worksheet->write_comment( 0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3 );
+$worksheetACMG->write_comment( 0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3  );
+
+
+#FILLING COLUMN TITLES FOR TRIO SHEETS
+if (defined $trio){
+	$worksheetHTZcompo->write_row( 0, 0, \@columnTitles );
+	$worksheetAR->write_row( 0, 0, \@columnTitles );
+	$worksheetSNPmumVsCNVdad->write_row( 0, 0, \@columnTitles );
+	$worksheetSNPdadVsCNVmum->write_row( 0, 0, \@columnTitles );
+	$worksheetDENOVO->write_row( 0, 0, \@columnTitles );
+
+			
+	#write pLI comment
+	$worksheetHTZcompo->write_comment(0,$dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
+	$worksheetAR->write_comment(0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
+	$worksheetSNPmumVsCNVdad->write_comment(0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
+	$worksheetSNPdadVsCNVmum->write_comment(0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
+	$worksheetDENOVO->write_comment( 0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
+
+}
+
+#FILLING COLUMN TITLES FOR CANDIDATES SHEET
+
+if($candidates ne ""){
+	$worksheetCandidats->write_row( 0, 0, \@columnTitles );
+	$worksheetCandidats->write_comment(0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3 );
+}
+
+
 ####################################################################
 #
 #
@@ -571,6 +605,7 @@ my @CommentPhenotype = ( 'Disease_description.refGene');
 
 my %dicoGeneForHTZcompo;
 my $previousGene ="";
+my $filterBool;
 $dicoGeneForHTZcompo{$previousGene}{'ok'}=0;
 $dicoGeneForHTZcompo{$previousGene}{'cnt'}=0;
 
@@ -624,42 +659,12 @@ while( <VCF> ){
 		}	
 	
     
-    
 
-
-#########FILLING COLUMN TITLES FOR SHEETS
-			$worksheet->write_row( 0, 0, \@columnTitles );
-	    	$worksheetACMG->write_row( 0, 0, \@columnTitles );
-		
-			#write comment for pLI
-	    	$worksheet->write_comment( 0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3 );
-	    	$worksheetACMG->write_comment( 0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3  );
-
-
+######### Increase row number 
 	    	$worksheetLine ++;
 	    	$worksheetLineACMG ++;
 
-
-
-
-
-			#FILLING COLUMN TITLES FOR TRIO SHEETS
 		if (defined $trio){
-			$worksheetHTZcompo->write_row( 0, 0, \@columnTitles );
-			$worksheetAR->write_row( 0, 0, \@columnTitles );
-			$worksheetSNPmumVsCNVdad->write_row( 0, 0, \@columnTitles );
-			$worksheetSNPdadVsCNVmum->write_row( 0, 0, \@columnTitles );
-			$worksheetDENOVO->write_row( 0, 0, \@columnTitles );
-
-			
-			#write pLI comment
-			$worksheetHTZcompo->write_comment(0,$dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
-			$worksheetAR->write_comment(0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
-			$worksheetSNPmumVsCNVdad->write_comment(0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
-			$worksheetSNPdadVsCNVmum->write_comment(0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
-			$worksheetDENOVO->write_comment( 0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3);
-
-
 
 			$worksheetLineHTZcompo ++;
 			$worksheetLineHTZcompo ++;
@@ -669,12 +674,8 @@ while( <VCF> ){
 			$worksheetLineDENOVO ++;
 
 		}
-			
-		#FILLING COLUMN TITLES FOR CANDIDATES SHEET
 
 		if($candidates ne ""){
-			$worksheetCandidats->write_row( 0, 0, \@columnTitles );
-			$worksheetCandidats->write_comment(0, $dicoColumnNbr{'Gene.refGene'}, $pLI_Comment,  x_scale => 3 );
 			$worksheetLineCandidats ++;
 		}
 
@@ -683,7 +684,7 @@ while( <VCF> ){
 		
 #############################################
 ##############################
-##########start to compute variant lines	
+##########  start to compute variant lines	
 
 	}else {
 
@@ -733,20 +734,32 @@ while( <VCF> ){
 
 
 		#select only x% pop freq 
-		#Use pop freq threshold as an input parameter (default = 2%)
+		#Use pop freq threshold as an input parameter (default = 1%)
 		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} >= $popFreqThr));  
 	
-
-
+		
+		#FILTERING according to newHope option and filterList option
+		$filterBool = 0;
 		if(defined $newHope){
 			#Keep only NON PASS or PASS + MPA ranking = 8
-			next if ($finalSortData[$dicoColumnNbr{'FILTER'}] eq "PASS" && $dicoInfo{'MPA_ranking'} < 8);
+			#next if ($finalSortData[$dicoColumnNbr{'FILTER'}] eq "PASS" && $dicoInfo{'MPA_ranking'} < 8);
+			switch ($finalSortData[$dicoColumnNbr{'FILTER'}]){
+				case (\@filterArray) { $filterBool=1 };
+			}
+			next if($filterBool == 1);
+			next if($dicoInfo{'MPA_ranking'} < 8 );
+
 		}else{
-			#remove NON PASS variant
-			next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
+			#remove NON PASS variant and remove MPA_Ranking = 8
+
+			switch ($finalSortData[$dicoColumnNbr{'FILTER'}]){
+				case (\@filterArray) {$filterBool=0}
+				else {$filterBool=1}
+			}
+			next if ($filterBool == 1);
+			next if( $dicoInfo{'MPA_ranking'} == 8);
+			#next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
 		
-			#remove MPA_Ranking = 8
-			next if( $dicoInfo{'MPA_ranking'} == 8);  
 		}
 
 
@@ -780,6 +793,24 @@ while( <VCF> ){
 			}	
 
 		}
+
+
+		#CNV GENES
+		if($cnvGeneList ne ""){
+	
+			my @geneList = split(';', $finalSortData[$dicoColumnNbr{'Gene.refGene'}] );	
+			foreach my $geneName (@geneList){
+				print $geneName."\n";
+				if (defined $cnvGene{$geneName} ){
+					print $geneName."toto\n";
+					$finalSortData[$dicoColumnNbr{'SecondHit-CNV'}] .= $cnvGene{$geneName}."\n";
+					print $finalSortData[$dicoColumnNbr{'SecondHit-CNV'}]."\n";
+				}
+
+			}	
+		}
+
+
 
 
 
@@ -844,6 +875,7 @@ while( <VCF> ){
 		$commentFunc = "";
 		foreach my $keys (@CommentFunc){
 			if (defined $dicoInfo{$keys} ){
+				$dicoInfo{$keys} =~ s/;/\n /g;
 				$commentFunc .= $keys.":\n ".$dicoInfo{$keys}."\n\n";
 			}
 		}
@@ -1035,7 +1067,7 @@ while( <VCF> ){
 				#ACMG
 				#if(defined $ACMGgene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
 				if(defined $ACMGgene{$geneName} ){
-					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} = "ACMG";
+					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#ACMG";
 				}
 		
 				#CANDIDATES
@@ -1056,7 +1088,6 @@ while( <VCF> ){
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} .= $phenolyzerGene{$geneName}{'comment'}."\n\n"  ;
 
 				}
-
 
 		
 			}
@@ -1097,7 +1128,6 @@ while( <VCF> ){
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  sprintf('#%2.2X%2.2X%2.2X',($dicoInfo{'pLi.refGene'}*255 + $dicoInfo{'pRec.refGene'}*255),($dicoInfo{'pRec.refGene'}*255 + $dicoInfo{'pNull.refGene'} * 255),0) ;
         		
 			
-			#$format_pLI = $workbook->add_format(bg_color => $dicopLI{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]}{"color_format"});
         		$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'});
 
 			if(defined $dicoInfo{'Missense_Z_score.refGene'} && $dicoInfo{'Missense_Z_score.refGene'} ne "." ){
