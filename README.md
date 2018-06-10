@@ -138,8 +138,10 @@ Command line to use Captain ACHAB
                           --case <index_sample_name> (required with trio option)
                           --dad <father_sample_name> (required with trio option)
                           --mum <mother_sample_name>  (required with trio option)
-                        --customInfo  <info name (will be added in a new column)> 
-                        --newHope (output only NON PASS or MPA_rank = 8 variants, default=output FILTER=PASS and MPAranking < 8 variants )>
+                        --customInfoList  <comma separated list of vcf-info name (will be added in a new column)> 
+                        --filterList <comma separated list of VCF FILTER to output (default= 'PASS', included automatically to the list)>
+                        --cnvGeneList <file with gene symbol + annotation (1 tab-separated), involved by parallel CNV calling>
+                        --newHope (output only NON PASS+ NON filterList or MPA_rank = 8 variants, default=output FILTER=PASS+filterList and MPAranking < 8 variants )>
                         --help (print this command usage)
 
 ```
