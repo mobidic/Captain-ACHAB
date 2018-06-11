@@ -901,7 +901,7 @@ while( <VCF> ){
 		#		GT:AD:DP:GQ:PL (haplotype caller)
 		#		GT:DP:GQ  => multiallelic line , vcf not splitted => should be done before, STOP RUN?
 		#		GT:GOF:GQ:NR:NV:PL (platyplus caller)
-		if($line[8] eq "GT:AD:DP:GQ:PL"){
+		if($line[8] eq "GT:AD:DP:GQ:PL" || $line[8] eq "GT:AB:AD:DP:GQ:PL"){
 			$caller = "GATK";
 		}elsif($line[8] eq "GT:GOF:GQ:NR:NV:PL"){
 			$caller = "platypus";
@@ -950,10 +950,14 @@ while( <VCF> ){
 							$DP = 0;
 							$AD = "0,0";
 
-						}else {
+						}elsif (length $line[8] == 14){
+							
 							$DP = $genotype[2];
 							$AD = $genotype[1];
 						
+						}else{
+							$DP = $genotype[3];
+							$AD = $genotype[2];
 						}
 
 					}elsif($caller eq "platypus"){
@@ -1008,7 +1012,8 @@ while( <VCF> ){
 							}
 
 
-							$AB= substr $AB, 0 , ((length $AB)-1);
+							$AB= substr $AB, 0 , ((
+							$AB)-1);
 
 
 						}
