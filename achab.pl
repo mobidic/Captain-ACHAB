@@ -300,7 +300,7 @@ if (defined $trio){
 my $current_gene= "";
 my $maxLine=0;
 if($phenolyzerFile ne ""){
-	open(PHENO , "<$phenolyzerFile") or die("Cannot open candidates file ".$phenolyzerFile) ;
+	open(PHENO , "<$phenolyzerFile") or die("Cannot open phenolyzer file ".$phenolyzerFile) ;
 	print  STDERR "Processing phenolyzer file ... \n" ; 
 	while( <PHENO> ){
 		next if($_ =~/^Tuple number/);
@@ -348,7 +348,7 @@ if($candidates ne ""){
 
 #get gene involved in CNV
 if ($cnvGeneList ne ""){
-	open( CNVGENES , "<$cnvGeneList")or die("Cannot open candidates file ".$cnvGeneList) ;
+	open( CNVGENES , "<$cnvGeneList")or die("Cannot open cnvGeneList file ".$cnvGeneList) ;
 	print  STDERR "Processing CNV Gene file ... \n" ; 
 	while( <CNVGENES> ){
 	  	$cnvGene_Line = $_;
