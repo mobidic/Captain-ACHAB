@@ -800,11 +800,11 @@ while( <VCF> ){
 	
 			my @geneList = split(';', $finalSortData[$dicoColumnNbr{'Gene.refGene'}] );	
 			foreach my $geneName (@geneList){
-				print $geneName."\n";
+				#print $geneName."\n";
 				if (defined $cnvGene{$geneName} ){
-					print $geneName."toto\n";
+					#print $geneName."toto\n";
 					$finalSortData[$dicoColumnNbr{'SecondHit-CNV'}] .= $cnvGene{$geneName}."\n";
-					print $finalSortData[$dicoColumnNbr{'SecondHit-CNV'}]."\n";
+					#print $finalSortData[$dicoColumnNbr{'SecondHit-CNV'}]."\n";
 				}
 
 			}	
@@ -1012,8 +1012,7 @@ while( <VCF> ){
 							}
 
 
-							$AB= substr $AB, 0 , ((
-							$AB)-1);
+							$AB= substr $AB, 0 , ((length $AB)-1);
 
 
 						}
