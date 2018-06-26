@@ -12,6 +12,14 @@ This is the end of excel table with so many columns ! All necessary information 
 A vcf annotated by ANNOVAR with MPA annotations and Phenolyzer predictions. 
 See [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/) and [Phenolyzer](https://github.com/WGLab/phenolyzer).
 
+### 0. Clean VCF if Platypus caller is used.
+
+Remove line with discording field from Platypus caller.  
+
+```bash
+awk -F "\t|:" '{if($5~/,.+,.+/ && $0 ~ /GT:GOF:GQ:NR:NV:PL/){na=split($5,a,",");nb=split($NF,b,",");if(nb > 8){print $0 }}else{print}}' sample.vcf > sample.clean.vcf
+```
+
 ### 1. Get custom annotations
 
 To get unavailable annotations in ANNOVAR database into our vcf, we are going to add missense Z-score from ExAC and OMIM database into the gene_fullxref.txt from ANNOVAR available in the example folder.
