@@ -149,6 +149,9 @@ Command line to use Captain ACHAB
                         --customInfoList  <comma separated list of vcf-info name (will be added in a new column)> 
                         --filterList <comma separated list of VCF FILTER to output (default= 'PASS', included automatically to the list)>
                         --cnvGeneList <file with gene symbol + annotation (1 tab-separated), involved by parallel CNV calling>
+                        --customVCF <VCF format File with custom annotation (if variant matches then INFO field annotations will be added in new column)>
+                        --mozaicRate <mozaic rate value from 0 to 1, it will color 0/1 genotype according to this value  (default=0.2 as 20%)>
+                        --mozaicDP <ALT variant Depth, number of read supporting ALT, it will give darker color to the 0/1 genotype  (default=5)>
                         --newHope (output only NON PASS+ NON filterList or MPA_rank = 8 variants, default=output FILTER=PASS+filterList and MPAranking < 8 variants )>
                         --help (print this command usage)
 
