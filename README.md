@@ -1,6 +1,6 @@
 # Captain ACHAB | Analysis Converter for Human who might Abhor Bioinformatics
 --------------------------------------------------------------------------------
-![JHI](achabjust.png)
+<img src="achab_logo.png" width="350">
 
 ## Overview
 
@@ -156,6 +156,10 @@ Command line to use Captain ACHAB
                         --help (print this command usage)
 
 ```
+
+## Use Captain ACHAB via a Singularity Container
+
+We create a Singularity container to use Captain Achab workflow easier. All details are available at the repository [Achabilarity](https://github.com/mobidic/Achabilarity).
 
 ## Requirements
 
