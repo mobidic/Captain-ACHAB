@@ -169,4 +169,16 @@ Python library : pandas and dependencies (only tested with python 2.7)
 
 Perl library via cpanm : BioPerl, Graph, Switch, Excel::Writer::XLSX
 
+--------------------------------------------------------------------------------
 
+**Montpellier Bioinformatique pour le Diagnostique Clinique (MoBiDiC)**
+
+*CHU de Montpellier*
+
+France
+
+![MoBiDiC](logo-mobidic.png)
+
+[Visit our website](https://neuro-2.iurc.montp.inserm.fr/mobidic/)
+
+--------------------------------------------------------------------------------
