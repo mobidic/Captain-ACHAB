@@ -18,7 +18,8 @@ Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [Cute
 
 - **Selection of gene panels** : --candidates option create a specific sheet with your gene of interests. 
 
-- **CNV implementation** : --cnvGeneList option let you add CNV list from your CNV caller into Captain Achab. We recommand to use [MoLLuDiC](https://github.com/mobidic/MoLLuDiC/) or [MobiCNV](https://github.com/mobidic/MobiDL) for CNV calling with a output ready for Captain Achab. 
+- **CNV implementation** : --cnvGeneList option let you add CNV list from your CNV caller into Captain Achab. We recommand to use [MoLLuDiC](https://github.com/mobidic/MoLLuDiC/) or [MobiCNV](https://github.com/mobidic/MobiDL) for CNV calling with a output ready for Captain Achab.  
+![CNV](img/cnv-achab.png)
 
 ### Biological interpretation with Captain Achab
 
@@ -27,10 +28,15 @@ To be notice : More informations are available when mouse is hovering over the c
 **1. Select your mode of inheritance hypothesis by selecting the right sheet :**  
 ![Sheets](img/inheritance-achab.PNG)
 
-**2. Analyse variants from top to bottom via the MPA-achab ranking :**    
+**2. Filter variant depending on general population frequency : **  
+
+Default frequency threshold is 0.01 in gnomAD_genome (1%).
+![gnomAD](img/gnomad-achab.png)
+
+**3. Analyse variants from top to bottom via the MPA-achab ranking :**    
 Ranking : from 1 to 7 and score.  
 Numbers after comma represents adjustment depending on in silico gene predictions pLi, pRec, missense Z-score.  
-- 1 - 10 with clinvar_pathogenicity : Pathogenic variants reported on ClinVar
+- 1 - 10 with clinvar_pathogenicity : Pathogenic variants reported on ClinVar (details on the CLINSIG column) ![ClinVar](img/clinvar-achab.png)
 - 2 - 10 with stop or frameshift_impact : Premature Truncation Codon : nonsense or frameshift
 - 3,4,5 - 10 with splicing_impact (ADA, RF, Spidex) : Affecting splice variants predictions ranked by algorithm performance robustness
 - 6 - with splicing_impact (indel) - Indel in splicing regions (as there is no splicing predictions for this case)
@@ -39,16 +45,28 @@ Numbers after comma represents adjustment depending on in silico gene prediction
 
 ![Mpa](img/mpa2-achab.PNG)
 
-**3. Filter variant depending on general population frequency : 
-![gnomAD](img/gnomad-achab.png)
+**4. Analysis first variants with good coverage :**  
+DP stand for Depth   
+AB for Allele Balancy  
+AD for Allele Depth (ref and alt)  
+By default, cell with be purple if AB is beneath 20% (0.2) and alt AD is under 5.  
+![Genotype](img/genotype-achab.png)
 
-**4. Diagnosis analysis : selection of OMIM morbid gene only** 
+**5. Diagnosis analysis : **  
+- Selection of OMIM morbid gene only  
 Filter emptys cells "." in the Phenotypes.refGene column. 
 ![Clinical](img/clinical-achab.png)
 
-**5. Diagnosis analysis : ** 
+- [Intervar](https://github.com/WGLab/InterVar) automatic and pre-computed advice on ACMG classification.  
+![Intervar](img/intervar-achab.png)
 
+**6. Research analysis : **   
+Select candidate gene by in silico predictions (pLi, pRec, PNull, missense Z-score), tissue specificity and gene function.
 ![Gene](img/gene-achab.png)
+
+**7. HGVS classification for NGS report :**
+Find variant nomenclature for all transcripts from RefSeq (NM).
+![Function](img/function-achab.png)
 
 ## How to get a Captain Achab file
 
