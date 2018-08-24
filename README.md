@@ -4,27 +4,45 @@
 
 ## Overview
 
-Captain ACHAB is a simple and useful interface to analysis of WES data for molecular diagnosis.
-This is the end of excel table with so many columns ! All necessary information is available in one look.
+Captain ACHAB is a simple and useful interface to analysis of NGS data for molecular diagnosis.
+This is the end of Excel table with so many columns ! All necessary information is available in one look.
+Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [CuteVariant](https://github.com/labsquare/CuteVariant) (.JSON). 
 
-## Input 
+### Main features
 
-A vcf annotated by ANNOVAR with MPA annotations and Phenolyzer predictions. 
+#### Single window interpretation
+All needed informations for variants biological interpretation are accessible (Quality data, Genotype, Variant localization,...)  
+
+#### Ranked and prioritized variants 
+Variants are sorted and ranked by the [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/). 
+
+#### Mode of inheritance 
+Multiples sheets are created depending on assumed mode of inheritance (Autosomal recessive, Autosomal Dominant, Compound Heterozygous, de novo with the --trio option).
+
+#### Selection of gene panels
+--candidates option create a specific sheet with your gene of interests. 
+
+#### CNV implementation 
+--cnvGeneList option let you add CNV list from your CNV caller into Captain Achab. We recommand to use [MoLLuDiC](https://github.com/mobidic/MoLLuDiC/) or [MobiCNV](https://github.com/mobidic/MobiDL) for CNV calling with a output ready for Captain Achab. 
+
+## How to get a Captain Achab file
+
+### Input 
+
+Captain ACHAB need a vcf annotated by ANNOVAR with MPA annotations and Phenolyzer predictions. 
 See [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/) and [Phenolyzer](https://github.com/WGLab/phenolyzer).
 
-### 0. Clean VCF if Platypus caller is used.
+### Use Captain Achab via a Singularity Container from a raw vcf file
 
-Remove line with discording field from Platypus caller.  
+We create a Singularity container to use Captain Achab workflow easier. All details are available at the repository [Achabilarity](https://github.com/mobidic/Achabilarity).
 
-```bash
-awk -F "\t|:" '{if($5~/,.+,.+/ && $0 ~ /GT:GOF:GQ:NR:NV:PL/){na=split($5,a,",");nb=split($NF,b,",");if(nb > 8){print $0 }}else{print}}' sample.vcf > sample.clean.vcf
-```
+### Get all requirements to get a vcf file ready for Captain Achab
 
-### 1. Get custom annotations
+#### 1. Get custom annotations
 
 To get unavailable annotations in ANNOVAR database into our vcf, we are going to add missense Z-score from ExAC and OMIM database into the gene_fullxref.txt from ANNOVAR available in the example folder.
 
-#### Missense Z-score 
+##### Missense Z-score 
 
 First download the database from ExAc (ftp.broadinstitute.org).
 
@@ -38,7 +56,7 @@ cut -f2,18 fordist_cleaned_exac_r03_march16_z_pli_rec_null_data.txt |  awk -F "\
 vim missense_zscore.txt ## change header "gene" to "#Gene_name" and name column 2 "Missense_Z_score" to allow recognition by pandas
 ```
 
-#### OMIM 
+##### OMIM 
 
 According to use OMIM license, download the gene2map.txt at https://www.omim.org/downloads/.
 
@@ -47,7 +65,7 @@ tail -n+4 genemap2.txt | cut -f 9,13 > omim.tsv
 vim omim.tsv ## change header "Approved Symbol" to "#Gene_name" to allow recognition by pandas
 ```
 
-#### Merge with the gene_fullxref.txt
+##### Merge with the gene_fullxref.txt
 
 You need first to install pandas if needed.
 
@@ -76,13 +94,9 @@ cut -f2- gene_customfullxref_tmp.txt | sed 's/+/plus/g' | awk 'BEGIN{FS=OFS="\t"
 rm gene_customfullxref_tmp.txt 
 ```
 
-### 2. Annovar annotation 
+#### 2. Annovar annotation 
 
 A tutorial to install ANNOVAR and more informations are available at : [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/)
-
-Note: multiallelic lines from vcf have to be split before annotation ( using: sort vcf then
-bcftools-1.3.1/htslib-1.3.1/bgzip -i example.sort.vcf
-bcftools-1.3.1/bcftools norm -O v -m - -o example.norm.vcf example.sort.vcf.gz)
 
 Command line for vcf annotation by ANNOVAR with needed databases. 
 
@@ -90,7 +104,7 @@ Command line for vcf annotation by ANNOVAR with needed databases.
 perl path/to/table_annovar.pl path/to/example.vcf humandb/ -buildver hg19 -out path/to/output/name -remove -protocol refGene,refGene,clinvar_20170905,dbnsfp33a,spidex,dbscsnv11,gnomad_exome,gnomad_genome,intervar_20180118 -operation gx,g,f,f,f,f,f,f,f -nastring . -vcfinput -otherinfo -arg '-splicing 20','-hgvs',,,,,,, -xref example/gene_customfullxref.txt
 ```
 
-### 3. MPA annotation
+#### 3. MPA annotation
 
 See installation and more informations about MPA at [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/).
 
@@ -104,7 +118,7 @@ Command line for annotated vcf by ANNOVAR with MPA scores.
 python MPA.py -i name.hg19_multianno.vcf -o name.hg19_multianno_MPA.vcf
 ```
 
-### 4. Phenolyzer annotation 
+#### 4. Phenolyzer annotation 
 
 Tutorial to install Phenolyzer is available at [Phenolyzer](https://github.com/WGLab/phenolyzer). 
 
@@ -125,9 +139,14 @@ Command line to get predictions for Phenolyzer and the out.predicted_gene_scores
 perl disease_annotation.pl disease.txt -f -p -ph -logistic -out disease/out
 ```
 
-## Captain ACHAB Command
+#### 4. Library used
 
-Installation (need Switch, Excel::Writer::XLSX, easy to install with cpanm)
+Python library : pandas and dependencies (only tested with python 2.7)
+
+Perl library via cpanm : BioPerl, Graph, Switch, Excel::Writer::XLSX
+
+
+### Captain ACHAB Command
 
 ```bash
 https://github.com/mobidic/Captain-ACHAB.git
@@ -157,17 +176,24 @@ Command line to use Captain ACHAB
 
 ```
 
-## Use Captain ACHAB via a Singularity Container
+## Troubleshooting
 
-We create a Singularity container to use Captain Achab workflow easier. All details are available at the repository [Achabilarity](https://github.com/mobidic/Achabilarity).
+### Clean VCF if Platypus caller is used.
 
-## Requirements
+Remove line with discording field from Platypus caller.  
 
-### Library
+```bash
+awk -F "\t|:" '{if($5~/,.+,.+/ && $0 ~ /GT:GOF:GQ:NR:NV:PL/){na=split($5,a,",");nb=split($NF,b,",");if(nb > 8){print $0 }}else{print}}' sample.vcf > sample.clean.vcf
+```
+### Multiallelic lines
 
-Python library : pandas and dependencies (only tested with python 2.7)
+Multiallelic lines from vcf have to be split before annotation.
 
-Perl library via cpanm : BioPerl, Graph, Switch, Excel::Writer::XLSX
+```bash
+sort example.vcf 
+bcftools-1.3.1/htslib-1.3.1/bgzip -i example.sort.vcf
+bcftools-1.3.1/bcftools norm -O v -m - -o example.norm.vcf example.sort.vcf.gz
+```
 
 --------------------------------------------------------------------------------
 
