@@ -22,11 +22,23 @@ Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [Cute
 
 ### Biological interpretation with Captain Achab
 
-1. Select your mode of inheritance hypothesis by selecting the right sheet. 
+1. Select your mode of inheritance hypothesis by selecting the right sheet.  
 ![Sheets](img/inheritance-achab.PNG)
 
-2. Analyse variants from top to bottom via the MPA-achab ranking.
+2. Analyse variants from top to bottom via the MPA-achab ranking :     
+Ranking : from 1 to 7 and score.  
+Numbers after comma represents adjustment depending on in silico gene predictions pLi, pRec, missense Z-score.  
+
+- 1 - 10 with clinvar_pathogenicity : Pathogenic variants reported on ClinVar
+- 2 - 10 with stop or frameshift_impact : Premature Truncation Codon : nonsense or frameshift
+- 3,4,5 - 10 with splicing_impact (ADA, RF, Spidex) : Affecting splice variants predictions ranked by algorithm performance robustness
+- 6 - with splicing_impact (indel) - Indel in splicing regions (as there is no splicing predictions for this case)
+- 7 - with missense_impact (10 to 0) : Missense variants scores
+- 8 - with unknown_impact : Exonic variants with not clearly annotated ORFs and splicing variants not predicted pathogenic  
+
 ![Mpa](img/mpa2-achab.PNG)
+
+3. 
 
 
 ## How to get a Captain Achab file
