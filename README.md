@@ -6,7 +6,9 @@
 
 Captain ACHAB is a simple and useful interface to analysis of NGS data for molecular diagnosis.
 This is the end of Excel table with so many columns ! All necessary information is available in one look.
-Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [CuteVariant](https://github.com/labsquare/CuteVariant) (.JSON). 
+Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [CuteVariant](https://github.com/labsquare/CuteVariant) (.JSON).     
+   
+![achab](img/achab.png)
 
 ### Main features
 
@@ -21,19 +23,21 @@ Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [Cute
 - **CNV implementation** : --cnvGeneList option let you add CNV list from your CNV caller into Captain Achab. We recommand to use [MoLLuDiC](https://github.com/mobidic/MoLLuDiC/) or [MobiCNV](https://github.com/mobidic/MobiDL) for CNV calling with a output ready for Captain Achab.  
 ![CNV](img/cnv-achab.png)
 
-### Biological interpretation with Captain Achab
+## Biological interpretation with Captain Achab
 
 To be notice : More informations are available when mouse is hovering over the cell, if a right top red triangle is displayed. 
 
 **1. Select your mode of inheritance hypothesis by selecting the right sheet :**  
+
 ![Sheets](img/inheritance-achab.PNG)
 
-**2. Filter variant depending on general population frequency : **  
+**2. Filter variant depending on general population frequency :**  
 
 Default frequency threshold is 0.01 in gnomAD_genome (1%).
 ![gnomAD](img/gnomad-achab.png)
 
-**3. Analyse variants from top to bottom via the MPA-achab ranking :**    
+**3. Analyse variants from top to bottom via the MPA-achab ranking :** 
+
 Ranking : from 1 to 7 and score.  
 Numbers after comma represents adjustment depending on in silico gene predictions pLi, pRec, missense Z-score.  
 - 1 - 10 with clinvar_pathogenicity : Pathogenic variants reported on ClinVar (details on the CLINSIG column) ![ClinVar](img/clinvar-achab.png)
@@ -46,26 +50,30 @@ Numbers after comma represents adjustment depending on in silico gene prediction
 ![Mpa](img/mpa2-achab.PNG)
 
 **4. Analysis first variants with good coverage :**  
+
 DP stand for Depth   
 AB for Allele Balancy  
 AD for Allele Depth (ref and alt)  
 By default, cell with be purple if AB is beneath 20% (0.2) and alt AD is under 5.  
 ![Genotype](img/genotype-achab.png)
 
-**5. Diagnosis analysis : **  
-- Selection of OMIM morbid gene only  
-Filter emptys cells "." in the Phenotypes.refGene column. 
+**5. Diagnosis analysis :**   
+
+- Selection of OMIM morbid gene only    
+Filter emptys cells "." in the Phenotypes.refGene column.   
 ![Clinical](img/clinical-achab.png)
 
-- [Intervar](https://github.com/WGLab/InterVar) automatic and pre-computed advice on ACMG classification.  
+- [Intervar](https://github.com/WGLab/InterVar) automatic and pre-computed advice on ACMG classification.    
 ![Intervar](img/intervar-achab.png)
 
-**6. Research analysis : **   
-Select candidate gene by in silico predictions (pLi, pRec, PNull, missense Z-score), tissue specificity and gene function.
+**6. Research analysis :**   
+
+Select candidate gene by in silico predictions (pLi, pRec, PNull, missense Z-score), tissue specificity and gene function.  
 ![Gene](img/gene-achab.png)
 
 **7. HGVS classification for NGS report :**
-Find variant nomenclature for all transcripts from RefSeq (NM).
+
+Find variant nomenclature for all transcripts from RefSeq (NM).  
 ![Function](img/function-achab.png)
 
 ## How to get a Captain Achab file
