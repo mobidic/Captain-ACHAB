@@ -10,20 +10,19 @@ Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [Cute
 
 ### Main features
 
-#### Single window interpretation
-All needed informations for variants biological interpretation are accessible (Quality data, Genotype, Variant localization,...)  
+- **Single window interpretation** : All needed informations for variants biological interpretation are accessible (Quality data, genotype, variant localization, general population frequency, in silico splice and missense predictions, clinical human disease association ...) with multi-dimensional display (colors, on hover commentary). 
 
-#### Ranked and prioritized variants 
-Variants are sorted and ranked by the [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/). 
+- **Ranked and prioritized variants** : Variants are sorted and ranked by the [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/) with additional ranking rules depending gene knowledge (pLI) and phenotypes (HPO and [Phenolyzer](https://github.com/WGLab/phenolyzer)).   
 
-#### Mode of inheritance 
-Multiples sheets are created depending on assumed mode of inheritance (Autosomal recessive, Autosomal Dominant, Compound Heterozygous, de novo with the --trio option).
+- **Mode of inheritance** : Multiples sheets are created depending on assumed mode of inheritance (Autosomal recessive, Autosomal Dominant, Compound Heterozygous, de novo with the --trio option).
 
-#### Selection of gene panels
---candidates option create a specific sheet with your gene of interests. 
+- **Selection of gene panels** : --candidates option create a specific sheet with your gene of interests. 
 
-#### CNV implementation 
---cnvGeneList option let you add CNV list from your CNV caller into Captain Achab. We recommand to use [MoLLuDiC](https://github.com/mobidic/MoLLuDiC/) or [MobiCNV](https://github.com/mobidic/MobiDL) for CNV calling with a output ready for Captain Achab. 
+- **CNV implementation** : --cnvGeneList option let you add CNV list from your CNV caller into Captain Achab. We recommand to use [MoLLuDiC](https://github.com/mobidic/MoLLuDiC/) or [MobiCNV](https://github.com/mobidic/MobiDL) for CNV calling with a output ready for Captain Achab. 
+
+### Biological interpretation with Captain Achab
+
+1. Select your mode of inheritance hypothesis by selecting the right sheet. 
 
 ## How to get a Captain Achab file
 
