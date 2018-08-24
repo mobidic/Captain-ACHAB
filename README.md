@@ -1,6 +1,6 @@
 # Captain ACHAB | Analysis Converter for Human who might Abhor Bioinformatics
 --------------------------------------------------------------------------------
-<img src="achab_logo.png" width="350">
+<img src="img/achab_logo.png" width="350">
 
 ## Overview
 
@@ -23,6 +23,11 @@ Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [Cute
 ### Biological interpretation with Captain Achab
 
 1. Select your mode of inheritance hypothesis by selecting the right sheet. 
+![Sheets](img/inheritance-achab.PNG)
+
+2. Analyse variants from top to bottom via the MPA-achab ranking.
+![Mpa](img/mpa2-achab.PNG)
+
 
 ## How to get a Captain Achab file
 
@@ -202,7 +207,7 @@ bcftools-1.3.1/bcftools norm -O v -m - -o example.norm.vcf example.sort.vcf.gz
 
 France
 
-![MoBiDiC](logo-mobidic.png)
+![MoBiDiC](img/logo-mobidic.png)
 
 [Visit our website](https://neuro-2.iurc.montp.inserm.fr/mobidic/)
 
