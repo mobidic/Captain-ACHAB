@@ -39,6 +39,8 @@ Default frequency threshold is 0.01 in gnomAD_genome (1%).
 **3. Analyse variants from top to bottom via the MPA-achab ranking :** 
 
 Ranking : from 1 to 7 and score.  
+![mpa](img/mpa-achab.PNG)
+
 Numbers after comma represents adjustment depending on in silico gene predictions pLi, pRec, missense Z-score.  
 - 1 - 10 with clinvar_pathogenicity : Pathogenic variants reported on ClinVar (details on the CLINSIG column) ![ClinVar](img/clinvar-achab.png)
 - 2 - 10 with stop or frameshift_impact : Premature Truncation Codon : nonsense or frameshift
@@ -70,6 +72,10 @@ Filter emptys cells "." in the Phenotypes.refGene column.
 
 Select candidate gene by in silico predictions (pLi, pRec, PNull, missense Z-score), tissue specificity and gene function.  
 ![Gene](img/gene-achab.png)
+
+Select candidate gene by Phenolyzer predictions  
+![Phenolyzer](img/phenolyzer2-achab.PNG)
+
 
 **7. HGVS classification for NGS report :**
 
