@@ -422,7 +422,7 @@ if ($cnvGeneList ne ""){
 		}
 
 		if(defined $cnvGene_List[1]){
-				$cnvGene{$current_gene} .= " \n=> ".$cnvGene_List[1];
+				$cnvGene{$current_gene} .= " => ".$cnvGene_List[1].";";
 		}
 			
 	}
@@ -804,11 +804,11 @@ while( <VCF> ){
 		if(defined $newHope){
 			#Keep only NON PASS or PASS + MPA ranking = 8
 			#next if ($finalSortData[$dicoColumnNbr{'FILTER'}] eq "PASS" && $dicoInfo{'MPA_ranking'} < 8);
-			switch ($finalSortData[$dicoColumnNbr{'FILTER'}]){
-				case (\@filterArray) { $filterBool=1 };
-			}
-			next if($filterBool == 1);
-			next if($dicoInfo{'MPA_ranking'} < 8 );
+			#switch ($finalSortData[$dicoColumnNbr{'FILTER'}]){
+			#	case (\@filterArray) { $filterBool=1 };
+			#}
+			#next if($filterBool == 1);
+			#next if($dicoInfo{'MPA_ranking'} < 8 );
 
 		}else{
 			#remove NON PASS variant and remove MPA_Ranking = 8
