@@ -21,7 +21,7 @@ use Switch;
 my $man = "USAGE : \nperl achab.pl 
 \n--vcf <vcf_file> 
 \n--outDir <output directory (default = current dir)> 
-\n--outPrefix <output file prelifx (default = "")> 
+\n--outPrefix <output file prelifx (default = \"\")> 
 \n--candidates <file with gene symbol of interest>  
 \n--phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   
 \n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01> 
