@@ -214,7 +214,8 @@ Command line to use Captain ACHAB
 ```
 #USAGE : perl achab.pl 
                         --vcf <vcf_file> 
-                        --outDir <output directory (default = current dir)> 
+                        --outDir <output directory (default = current dir)>
+                        --outPrefix <output file prelifx (default = "")>
                         --candidates <file with gene symbol of interest>  
                         --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   
                         --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01> 
