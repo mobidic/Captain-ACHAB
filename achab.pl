@@ -30,7 +30,7 @@ my $man = "USAGE : \nperl achab.pl
 \n\t--mum <mother_sample_name>  
 \n--customInfoList  <comma separated list of vcf-info names (will be added in a new column)>  
 \n--filterList <comma separated list of VCF FILTER to output (default='PASS', included )>   
-\n--cnvGeneList <File with gene symbol + annotation , involved by parallel CNV calling >
+\n--cnvGeneList <File with gene symbol + annotation (1 tab separated), involved by parallel CNV calling >
 \n--customVCF <VCF format File with custom annotation (if variant matches then INFO field annotations will be added in new column)>
 \n--mozaicRate <mozaic rate value from 0 to 1, it will color 0/1 genotype according to this value  (default=0.2 as 20%)>
 \n--mozaicDP <ALT variant Depth, number of read supporting ALT, it will give darker color to the 0/1 genotype  (default=5)>
@@ -991,6 +991,9 @@ while( <VCF> ){
 			#print STDERR "Multi-allelic line detection. Please split the vcf file in order to get 1 allele by line\n";
 			#print STDERR $current_line ."\n";
 			#exit 1; 
+		}elsif($line[8] eq "GT:DP:AF"){
+			#SeqNext like format
+			$caller = "other _ GT:DP:AF";
 		}else{
 			print STDERR "The Format of the Caller used for this line is unknown. Processing is a risky business. This line won't be processed.\n";
 			print STDERR $current_line ."\n";
@@ -1077,6 +1080,11 @@ while( <VCF> ){
 						$DP = $genotype[1];
 						$AD = 0;
 						$AD .= ",0";
+						
+					}elsif($caller eq "other _ GT:DP:AF"){
+						$DP = $genotype[1];
+						$AD = ($DP-int($DP*$genotype[2])) . "," . int($DP*$genotype[2]);
+					
 					}
 
 					
