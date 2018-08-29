@@ -21,6 +21,7 @@ use Switch;
 my $man = "USAGE : \nperl achab.pl 
 \n--vcf <vcf_file> 
 \n--outDir <output directory (default = current dir)> 
+\n--outPrefix <output file prelifx (default = "")> 
 \n--candidates <file with gene symbol of interest>  
 \n--phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   
 \n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01> 
@@ -43,6 +44,7 @@ my $help;
 my $current_line;
 my $incfile = "";
 my $outDir = ".";
+my $outPrefix = "";
 my $case = "";
 my $mum = "";
 my $dad = "";
@@ -102,6 +104,7 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"trio"				=> \$trio,
 		"candidates:s"			=> \$candidates,
 		"outDir=s"			=> \$outDir,
+		"outPrefix:s"			=> \$outPrefix,
 		"phenolyzerFile:s"		=> \$phenolyzerFile,
 		"popFreqThr=s"			=> \$popFreqThr, 
 		"customInfoList:s"		=> \$customInfoList, 
@@ -121,10 +124,14 @@ if(defined $help || $incfile eq ""){
 	die("$man");
 }
 
+#add underscore to output prefix
+if($outPrefix ne ""){
+	$outPrefix .= "_";
+}
+
 #define popFreqThr
 if( $popFreqThr eq ""){
 	$popFreqThr = 0.01;
-	
 }
 
 #define filter List
@@ -247,9 +254,9 @@ my $workbook;
 if ($outDir eq "." || -d $outDir) {
 	if(defined $newHope){
 		# Create a "new hope Excel" aka NON-PASS + MPA_RANKING=8 variants 
-		$workbook = Excel::Writer::XLSX->new( $outDir."/achab_catch_newHope.xlsx" );
+		$workbook = Excel::Writer::XLSX->new( $outDir."/".$outPrefix."achab_catch_newHope.xlsx" );
 	}else{
-		$workbook = Excel::Writer::XLSX->new( $outDir."/achab_catch.xlsx" );
+		$workbook = Excel::Writer::XLSX->new( $outDir."/".$outPrefix."achab_catch.xlsx" );
 	}
 }else {
  	die("No directory $outDir");
