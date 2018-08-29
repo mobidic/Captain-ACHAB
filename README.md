@@ -228,7 +228,7 @@ Command line to use Captain ACHAB
                         --customVCF <VCF format File with custom annotation (if variant matches then INFO field annotations will be added in new column)>
                         --mozaicRate <mozaic rate value from 0 to 1, it will color 0/1 genotype according to this value  (default=0.2 as 20%)>
                         --mozaicDP <ALT variant Depth, number of read supporting ALT, it will give darker color to the 0/1 genotype  (default=5)>
-                        --newHope (output only NON PASS+ NON filterList or MPA_rank = 8 variants, default=output FILTER=PASS+filterList and MPAranking < 8 variants )>
+                        --newHope (only popFreqThr filter is applied (no more filterList nor MPA_ranking filtering)
                         --help (print this command usage)
 
 ```
