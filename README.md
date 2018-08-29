@@ -252,6 +252,13 @@ bcftools-1.3.1/htslib-1.3.1/bgzip -i example.sort.vcf
 bcftools-1.3.1/bcftools norm -O v -m - -o example.norm.vcf example.sort.vcf.gz
 ```
 
+### Clean whitespace in VCF
+No whitespace is allowed in VCF ready to Captain Achab. Replace them with underscores.
+
+```bash
+sed -i 's/ /_/g' example.vcf 
+```
+
 --------------------------------------------------------------------------------
 
 **Montpellier Bioinformatique pour le Diagnostique Clinique (MoBiDiC)**
