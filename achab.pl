@@ -34,7 +34,8 @@ my $man = "USAGE : \nperl achab.pl
 \n--customVCF <VCF format File with custom annotation (if variant matches then INFO field annotations will be added in new column)>
 \n--mozaicRate <mozaic rate value from 0 to 1, it will color 0/1 genotype according to this value  (default=0.2 as 20%)>
 \n--mozaicDP <ALT variant Depth, number of read supporting ALT, it will give darker color to the 0/1 genotype  (default=5)>
-\n--newHope (output only NON PASS or MPA_rank = 8 variants, default=output FILTER=PASS and MPAranking < 8 variants )>";
+\n--newHope (only popFreqThr filter is applied (no more FILTER or MPA_ranking))>";
+#\n--newHope (output only NON PASS or MPA_rank = 8 variants, default=output FILTER=PASS and MPAranking < 8 variants )>";
 
 
 
@@ -85,6 +86,7 @@ my $variantID;
 my @geneListTemp;
 my @geneList;
 my $mozaicSamples = "";
+my $count = 0;
 
 my @finalSortData;
 my $familyGenotype;		
@@ -423,6 +425,7 @@ if ($cnvGeneList ne ""){
 
 		if(defined $cnvGene_List[1]){
 				$cnvGene{$current_gene} .= " => ".$cnvGene_List[1].";";
+				chomp $cnvGene{$current_gene};
 		}
 			
 	}
@@ -460,7 +463,7 @@ $dicoColumnNbr{'Gene.refGene'}=				2;  #Gene Name + comment pLi / Function_descr
 $dicoColumnNbr{'Phenotypes.refGene'}=			3;  #OMIM + comment Disease_description
 $dicoColumnNbr{'gnomAD_genome_ALL'}=			4;	#Pop Freq + comment ethny
 $dicoColumnNbr{'gnomAD_exome_ALL'}=			5;	#as well
-$dicoColumnNbr{'CLINSIG'}=				6;	#CLinvar
+$dicoColumnNbr{'CLNSIG'}=				6;	#CLinvar
 $dicoColumnNbr{'InterVar_automated'}=			7;	#+ comment ACMG status
 $dicoColumnNbr{'SecondHit-CNV'}=			8;	#TODO
 $dicoColumnNbr{'Func.refGene'}=				9;	# + comment ExonicFunc / AAChange / GeneDetail
@@ -530,6 +533,7 @@ my $commentGnomADGenomeScore;
 my $commentInterVar;
 my $commentFunc;
 my $commentPhenotype;
+my $commentClinvar;
 
 #define sorted arrays with score for comment
 my @CommentMPA_score = ("MPA_final_score",
@@ -621,6 +625,11 @@ my @CommentFunc = ( 	'ExonicFunc.refGene',
 
 my @CommentPhenotype = ( 'Disease_description.refGene');
 
+my @CommentClinvar = (	'CLNREVSTAT',
+			'CLNDN',
+			'CLNALLELEID',
+			'CLNDISDB');
+
 
 #########FILLING COLUMN TITLES FOR SHEETS
 $worksheet->write_row( 0, 0, \@columnTitles );
@@ -669,6 +678,9 @@ my $filterBool;
 $dicoGeneForHTZcompo{$previousGene}{'ok'}=0;
 $dicoGeneForHTZcompo{$previousGene}{'cnt'}=0;
 
+
+
+
 #############################################
 ##################   Start parsing VCF
 
@@ -677,6 +689,7 @@ open( VCF , "<$incfile" )or die("Cannot open vcf file ".$incfile) ;
 
 while( <VCF> ){
   	$current_line = $_;
+	$count++;
 
 #############################################
 ##############   skip header
@@ -873,7 +886,7 @@ while( <VCF> ){
 				#print $geneName."\n";
 				if (defined $cnvGene{$geneName} ){
 					#print $geneName."toto\n";
-					$finalSortData[$dicoColumnNbr{'SecondHit-CNV'}] .= $cnvGene{$geneName}."\n";
+					$finalSortData[$dicoColumnNbr{'SecondHit-CNV'}] .= $cnvGene{$geneName}."_";
 					#print $finalSortData[$dicoColumnNbr{'SecondHit-CNV'}]."\n";
 				}
 			}	
@@ -973,6 +986,14 @@ while( <VCF> ){
 		}
 
 
+		#CLINVAR COMMENT (CLNSIG)
+		#create string with array
+		$commentClinvar = "";
+		foreach my $keys (@CommentClinvar){
+			if (defined $dicoInfo{$keys} ){
+				$commentClinvar .= $keys.":\n ".$dicoInfo{$keys}."\n\n";
+			}
+		}
 
 
 
@@ -1013,7 +1034,8 @@ while( <VCF> ){
 #########FILL HASH STRUCTURE FOR FINAL SORT AND OUTPUT, according to rank
 		
 		#concatenate chrom_POS_REF_ALT to get variant ID
-		$variantID = $line[0]."_".$line[1]."_".$line[3]."_".$line[4]."_".$caller;
+		$variantID = $line[0]."_".$line[1]."_".$line[3]."_".$line[4]."_".$count;
+		#$variantID = $line[0]."_".$line[1]."_".$line[3]."_".$line[4]."_".$caller;
 		
 
 		#CHECK IF variant is in 
@@ -1196,6 +1218,7 @@ while( <VCF> ){
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentInterVar'} = $commentInterVar  ;
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentFunc'} = $commentFunc  ;
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenotype'} = $commentPhenotype  ;
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentClinvar'} = $commentClinvar  ;
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'genotypeMozaic'} = $mozaicSamples ;
 
 			#initialize worksheet
@@ -1733,6 +1756,10 @@ sub writeThisSheet {
 
 			if ($hashTemp{'commentInterVar'} ne ""){
 				$worksheet->write_comment( $worksheetLine,$hashColumn{'InterVar_automated'}, $hashTemp{'commentInterVar'} ,x_scale => 7, y_scale => 5  );
+			}
+			
+			if ($hashTemp{'commentClinvar'} ne ""){
+				$worksheet->write_comment( $worksheetLine,$hashColumn{'CLNSIG'}, $hashTemp{'commentClinvar'} ,x_scale => 7, y_scale => 5  );
 			}
 
 
