@@ -510,6 +510,7 @@ $dicoColumnNbr{'FILTER'}=	15+$cmpt ;
 my $lastColumn = 16+$cmpt; 
 
 if($customInfoList ne ""){
+	chomp $customInfoList;
 	@custInfList = split(/,/, $customInfoList);
 	foreach my $customInfo (@custInfList){
 		$dicoColumnNbr{$customInfo} = $lastColumn ;
