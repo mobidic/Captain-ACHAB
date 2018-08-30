@@ -1037,6 +1037,7 @@ while( <VCF> ){
 		$familyGenotype = "_";		
 		$commentGenotype = "CALLER = ".$caller."\t QUALITY = ".$line[5]."\n\n";
 
+		print STDERR "commentgeno     :     ".$commentGenotype."\n";
 
 #############################################################################
 #########FILL HASH STRUCTURE FOR FINAL SORT AND OUTPUT, according to rank
@@ -1745,6 +1746,7 @@ sub writeThisSheet {
 	#dEBUG
 #	print  "casecasecasecase         ". $hashTemp{'commentMPAscore'}."____".$hashColumn{"Gene.refGene"}."\n\n"; 
 
+			print STDERR "function commentgenotype    ".$hashTemp{'commentGenotype'}."\n";
 
 			$worksheet->write_row( $worksheetLine, 0, $hashTemp{'finalArray'} );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'MPA_ranking'},		$hashTemp{'commentMPAscore'} ,x_scale => 2, y_scale => 5 );
