@@ -1747,6 +1747,7 @@ sub writeThisSheet {
 #	print  "casecasecasecase         ". $hashTemp{'commentMPAscore'}."____".$hashColumn{"Gene.refGene"}."\n\n"; 
 
 			print STDERR "function commentgenotype    ".$hashTemp{'commentGenotype'}."\n";
+			print STDERR "nb samples     ".$hashTemp{'nbSample'}."\n";
 
 			$worksheet->write_row( $worksheetLine, 0, $hashTemp{'finalArray'} );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'MPA_ranking'},		$hashTemp{'commentMPAscore'} ,x_scale => 2, y_scale => 5 );
@@ -1754,6 +1755,10 @@ sub writeThisSheet {
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'gnomAD_exome_ALL'},	$hashTemp{'commentGnomADexome'} ,x_scale => 3, y_scale => 2  );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'Genotype-'.$case},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => $hashTemp{'nbSample'} );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'Func.refGene'},		$hashTemp{'commentFunc'} ,x_scale => 3, y_scale => 3  );
+			
+			#DEBUG
+			$worksheet->write_comment( $worksheetLine,$hashColumn{'#CHROM'},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => $hashTemp{'nbSample'} );
+			$worksheet->write_comment( $worksheetLine,$hashColumn{'POS'},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => 2 );
 			
 			if ($hashTemp{'commentPhenotype'} ne ""){
 
