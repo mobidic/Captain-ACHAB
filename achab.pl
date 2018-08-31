@@ -1037,7 +1037,7 @@ while( <VCF> ){
 		$familyGenotype = "_";		
 		$commentGenotype = "CALLER = ".$caller."\t QUALITY = ".$line[5]."\n\n";
 
-		print STDERR "commentgeno     :     ".$commentGenotype."\n";
+		#DEBUG print STDERR "commentgeno     :     ".$commentGenotype."\n";
 
 #############################################################################
 #########FILL HASH STRUCTURE FOR FINAL SORT AND OUTPUT, according to rank
@@ -1746,8 +1746,8 @@ sub writeThisSheet {
 	#dEBUG
 #	print  "casecasecasecase         ". $hashTemp{'commentMPAscore'}."____".$hashColumn{"Gene.refGene"}."\n\n"; 
 
-			print STDERR "function commentgenotype    ".$hashTemp{'commentGenotype'}."\n";
-			print STDERR "nb samples     ".$hashTemp{'nbSample'}."\n";
+			print STDERR "genotype case      ". $hashColumn{'Genotype-'.$case}."\n";
+			#print STDERR "nb samples     ".$hashTemp{'nbSample'}."\n";
 
 			$worksheet->write_row( $worksheetLine, 0, $hashTemp{'finalArray'} );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'MPA_ranking'},		$hashTemp{'commentMPAscore'} ,x_scale => 2, y_scale => 5 );
@@ -1756,9 +1756,9 @@ sub writeThisSheet {
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'Genotype-'.$case},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => $hashTemp{'nbSample'} );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'Func.refGene'},		$hashTemp{'commentFunc'} ,x_scale => 3, y_scale => 3  );
 			
-			#DEBUG
+			#DEBUG print commentGenotype in CHROM cells
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'#CHROM'},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => $hashTemp{'nbSample'} );
-			$worksheet->write_comment( $worksheetLine,$hashColumn{'POS'},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => 2 );
+			
 			
 			if ($hashTemp{'commentPhenotype'} ne ""){
 
