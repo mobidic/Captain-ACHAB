@@ -1746,7 +1746,7 @@ sub writeThisSheet {
 	#dEBUG
 #	print  "casecasecasecase         ". $hashTemp{'commentMPAscore'}."____".$hashColumn{"Gene.refGene"}."\n\n"; 
 
-			print STDERR "genotype case      ". $hashColumn{'Genotype-'.$case}."\n";
+			#print STDERR "genotype case      ". $hashColumn{'Genotype-'.$case}."\n";
 			#print STDERR "nb samples     ".$hashTemp{'nbSample'}."\n";
 
 			$worksheet->write_row( $worksheetLine, 0, $hashTemp{'finalArray'} );
