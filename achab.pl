@@ -354,6 +354,7 @@ if($phenolyzerFile ne ""){
 			$current_gene = $phenolyzer_List[0];
 			$phenolyzerGene{$current_gene}{'Raw'}= $phenolyzer_List[2];
 			$phenolyzerGene{$current_gene}{'comment'}= $phenolyzer_List[1]."\n".$phenolyzer_List[3]."\n";
+			$phenolyzerGene{$current_gene}{'normalized'}= $phenolyzer_List[3];
 			$maxLine=0;
 
 		}else{	
@@ -878,7 +879,7 @@ while( <VCF> ){
 			foreach my $geneName (@geneList){
 				#if (defined $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
 				if (defined $phenolyzerGene{$geneName} ){
-					$finalSortData[$dicoColumnNbr{'Phenolyzer'}] .= $phenolyzerGene{$geneName}{'Raw'}."\t";
+					$finalSortData[$dicoColumnNbr{'Phenolyzer'}] .= $phenolyzerGene{$geneName}{'Raw'}."_\t";
 				}
 
 			}	
@@ -1008,24 +1009,44 @@ while( <VCF> ){
 ############################################
 #############	Check FORMAT related to caller
 		#
+		my %formatIndex;
+		my @callerFormat = split(':' , $line[8]);
+		for (my $z = 0; $z < scalar @callerFormat; $z++){
+			$formatIndex{$callerFormat[$z]} = $z;
+		}
+		
+
+		
 		#		GT:AD:DP:GQ:PL (haplotype caller)
 		#		GT:DP:GQ  => multiallelic line , vcf not splitted => should be done before, STOP RUN?
 		#		GT:GOF:GQ:NR:NV:PL (platyplus caller)
-		if($line[8] eq "GT:AD:DP:GQ:PL" || $line[8] eq "GT:AB:AD:DP:GQ:PL"){
+		#		GT:DP:RO:QR:AO:QA:GL (freebayes)
+		#		GT:DP:AF (seqNext)
+		#
+		$caller = "";
+		if(defined $formatIndex{'AD'}){
 			$caller = "GATK";
-		}elsif($line[8] eq "GT:GOF:GQ:NR:NV:PL"){
+		}elsif(defined $formatIndex{'NR'}){
 			$caller = "platypus";
-		}elsif($line[8] eq "GT:DP:GQ"){
-			$caller = "other _ GT:DP:GQ";
+		}elsif(defined $formatIndex{'AO'}){
+			$caller = "freebayes";
+		}elsif(defined $formatIndex{'AF'} ){ 
+			# "GT:DP:AF"
+			#SeqNext like format
+			$caller = "other _ GT:DP:AF";
+
+		}elsif(defined $formatIndex{'DP'}){
+			$caller = "other _ GT:DP";
 			#print STDERR "Multi-allelic line detection. Please split the vcf file in order to get 1 allele by line\n";
 			#print STDERR $current_line ."\n";
 			#exit 1; 
-		}elsif($line[8] eq "GT:DP:AF"){
-			#SeqNext like format
-			$caller = "other _ GT:DP:AF";
+
+
+
 		}else{
 			print STDERR "The Format of the Caller used for this line is unknown. Processing is a risky business. This line won't be processed.\n";
 			print STDERR $current_line ."\n";
+			$caller = "unknown";
 			next;
 			#exit 1; 
 		}
@@ -1065,59 +1086,57 @@ while( <VCF> ){
 			#DEBUG	print $line[$dicoSamples{$finalcol}{'columnIndex'}]."\n";
 				
 				my @genotype = split(':', $line[$dicoSamples{$finalcol}{'columnIndex'}] );
+				#my $genotype =  $line[$dicoSamples{$finalcol}{'columnIndex'}];
+				
 
-				my $DP;		#total Depth
+				my $DP = $genotype[$formatIndex{'DP'}];		#total Depth
+				
 				my $adalt;	#Alternative Allelic Depth
 				my $adref;	#Reference Allelic Depth
 				my $AB;		#Allelic balancy
 				my $AD;		#Final Allelic Depth
 
 
-				if (scalar @genotype > 1 && $caller ne ""){
+				#if (scalar @genotype > 1 && $caller ne ""){
+				if ($caller ne "unknown"){
 
 					if(	$caller eq "GATK"){
 
 						#check if variant is not called
-						if ($genotype[2] eq "."){
+						if ($DP eq "."){
 							$DP = 0;
 							$AD = "0,0";
-
-						}elsif (length $line[8] == 14){
-							
-							$DP = $genotype[2];
-							$AD = $genotype[1];
 						
 						}else{
-							$DP = $genotype[3];
-							$AD = $genotype[2];
+							$AD = $genotype[$formatIndex{'AD'}];
 						}
 
 					}elsif($caller eq "platypus"){
 						
-						if($genotype[3] =~ m/,/){
-							my @genotype_DPsplit = split(',', $genotype[3]);
-							my @genotype_ADsplit = split(',', $genotype[4]);
+						if($genotype[$formatIndex{'NR'}] =~ m/,/){
+							my @genotype_DPsplit = split(',', $genotype[$formatIndex{'NR'}]);
+							my @genotype_ADsplit = split(',', $genotype[$formatIndex{'NV'}]);
 							$DP = $genotype_DPsplit[0];
 							$AD = ($genotype_DPsplit[0] - $genotype_ADsplit[0]);
 							$AD .= ",".$genotype_ADsplit[0];
 							
 						}else{
-							$DP = $genotype[3];
-							$AD = ($genotype[3] - $genotype[4]);
-							$AD .= ",".$genotype[4];
+							$DP = $genotype[$formatIndex{'NR'}];
+							$AD = ($genotype[$formatIndex{'NR'}] - $genotype[$formatIndex{'NV'}]);
+							$AD .= ",".$genotype[$formatIndex{'NV'}];
 						}
-					}elsif($caller eq "other _ GT:DP:GQ"){
+					}elsif($caller eq "other _ GT:DP"){
 						
-						$DP = $genotype[1];
 						$AD = 0;
 						$AD .= ",0";
 						
 					}elsif($caller eq "other _ GT:DP:AF"){
-						$DP = $genotype[1];
-						$AD = ($DP-int($DP*$genotype[2])) . "," . int($DP*$genotype[2]);
+						$AD = ($DP-int($DP*$genotype[$formatIndex{'AF'}])) . "," . int($DP*$genotype[$formatIndex{'AF'}]);
 					
+					}elsif($caller eq "freebayes"){
+						$AD = $genotype[$formatIndex{'RO'}];
+						$AD .= ",".$genotype[$formatIndex{'AO'}];
 					}
-
 					
 					#DEBUG
 					#print $genotype[2]."\n";
@@ -1162,12 +1181,12 @@ while( <VCF> ){
 					}
 
 
-				}else {
+				}else {  # caller unknown           @genotype length < 1
 					$adref = 0;
 					$adalt= 0;
 					$AB = 0;
-					$DP = 0;
-					$AD = "0,0";
+					$DP = $line[8];
+					$AD = $line[$dicoSamples{$finalcol}{'columnIndex'}];
 				}
 
 
@@ -1175,15 +1194,15 @@ while( <VCF> ){
 
 				#put the genotype and comments info into string
 				#convert "1/0" genotype to "0/1" format
-				if($genotype[0] eq "1/0"){
-					$genotype[0] = "0/1";
+				if($genotype[$formatIndex{'GT'}] eq "1/0"){
+					$genotype[$formatIndex{'GT'}] = "0/1";
 				}
-				$finalSortData[$dicoColumnNbr{$dicoSamples{$finalcol}{'columnName'}}] = $genotype[0];
-				$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[0]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
-				$familyGenotype .= $genotype[0]."_";
+				$finalSortData[$dicoColumnNbr{$dicoSamples{$finalcol}{'columnName'}}] = $genotype[$formatIndex{'GT'}];
+				$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
+				$familyGenotype .= $genotype[$formatIndex{'GT'}]."_";
 				
 				#record mozaic status of samples
-				if($genotype[0] eq "0/1" && $AB < $mozaicRate){
+				if($genotype[$formatIndex{'GT'}] eq "0/1" && $AB < $mozaicRate){
 					
 					$mozaicSamples  .= $dicoSamples{$finalcol}{'columnName'}.";";
 
@@ -1407,7 +1426,7 @@ while( <VCF> ){
 
 
 
-############ TIME TO FILL THE XLSX OUTPUT FILE
+############ THE TIME HAS COME TO FILL THE XLSX OUTPUT FILE
 
 
 
