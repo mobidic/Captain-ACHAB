@@ -465,24 +465,26 @@ my %dicoSamples ;
 
 #
 my %dicoColumnNbr;
+
 $dicoColumnNbr{'MPA_ranking'}=				0;	#+ comment MPA scores and related scores 
-$dicoColumnNbr{'Phenolyzer'}=				1;	#Phenolyzer raw score + comment Normalized score 
-$dicoColumnNbr{'Gene.refGene'}=				2;  #Gene Name + comment pLi / Function_description / tissue specificity
-$dicoColumnNbr{'Phenotypes.refGene'}=			3;  #OMIM + comment Disease_description
-$dicoColumnNbr{'gnomAD_genome_ALL'}=			4;	#Pop Freq + comment ethny
-$dicoColumnNbr{'gnomAD_exome_ALL'}=			5;	#as well
-$dicoColumnNbr{'CLNSIG'}=				6;	#CLinvar
-$dicoColumnNbr{'InterVar_automated'}=			7;	#+ comment ACMG status
-$dicoColumnNbr{'SecondHit-CNV'}=			8;	#TODO
-$dicoColumnNbr{'Func.refGene'}=				9;	# + comment ExonicFunc / AAChange / GeneDetail
+$dicoColumnNbr{'MPA_impact'}=				1;	#+ comment MPA scores and related scores 
+$dicoColumnNbr{'Phenolyzer'}=				2;	#Phenolyzer raw score + comment Normalized score 
+$dicoColumnNbr{'Gene.refGene'}=				3;  #Gene Name + comment pLi / Function_description / tissue specificity
+$dicoColumnNbr{'Phenotypes.refGene'}=			4;  #OMIM + comment Disease_description
+$dicoColumnNbr{'gnomAD_genome_ALL'}=			5;	#Pop Freq + comment ethny
+$dicoColumnNbr{'gnomAD_exome_ALL'}=			6;	#as well
+$dicoColumnNbr{'CLNSIG'}=				7;	#CLinvar
+$dicoColumnNbr{'InterVar_automated'}=			8;	#+ comment ACMG status
+$dicoColumnNbr{'SecondHit-CNV'}=			9;	#TODO
+$dicoColumnNbr{'Func.refGene'}=				10;	# + comment ExonicFunc / AAChange / GeneDetail
 
 
 
 if (defined $trio){
 	
-		$dicoColumnNbr{'Genotype-'.$case}=		10;
-		$dicoColumnNbr{'Genotype-'.$dad}=		11;
-		$dicoColumnNbr{'Genotype-'.$mum}=		12;
+		$dicoColumnNbr{'Genotype-'.$case}=		11;
+		$dicoColumnNbr{'Genotype-'.$dad}=		12;
+		$dicoColumnNbr{'Genotype-'.$mum}=		13;
 
 		$dicoSamples{1}{'columnName'} = 'Genotype-'.$case ;
 		$dicoSamples{2}{'columnName'} = 'Genotype-'.$dad ;
@@ -493,22 +495,22 @@ if (defined $trio){
 
 	for( my $i = 0 ; $i < scalar @sampleList; $i++){
 	
-		$dicoColumnNbr{'Genotype-'.$sampleList[$i]}=			10+$i;	# + comment qual / caller / DP AD AB
+		$dicoColumnNbr{'Genotype-'.$sampleList[$i]}=			11+$i;	# + comment qual / caller / DP AD AB
 		$dicoSamples{$i+1}{'columnName'} = 'Genotype-'.$sampleList[$i] ;
 	}
 
 }
 
 
-$dicoColumnNbr{'#CHROM'}=	10+$cmpt ;
-$dicoColumnNbr{'POS'}=		11+$cmpt ;
-$dicoColumnNbr{'ID'}=		12+$cmpt ;
-$dicoColumnNbr{'REF'}=		13+$cmpt ;
-$dicoColumnNbr{'ALT'}=		14+$cmpt ;
-$dicoColumnNbr{'FILTER'}=	15+$cmpt ;
+$dicoColumnNbr{'#CHROM'}=	11+$cmpt ;
+$dicoColumnNbr{'POS'}=		12+$cmpt ;
+$dicoColumnNbr{'ID'}=		13+$cmpt ;
+$dicoColumnNbr{'REF'}=		14+$cmpt ;
+$dicoColumnNbr{'ALT'}=		15+$cmpt ;
+$dicoColumnNbr{'FILTER'}=	16+$cmpt ;
 
 #Add custom Info in additionnal columns
-my $lastColumn = 16+$cmpt; 
+my $lastColumn = 17+$cmpt; 
 
 if($customInfoList ne ""){
 	chomp $customInfoList;
@@ -545,7 +547,8 @@ my $commentPhenotype;
 my $commentClinvar;
 
 #define sorted arrays with score for comment
-my @CommentMPA_score = ("MPA_final_score",
+my @CommentMPA_score = ("MPA_ranking",
+						"MPA_final_score",
 						"MPA_impact",
 						"MPA_adjusted",
 						"MPA_available",
@@ -876,13 +879,27 @@ while( <VCF> ){
 		if($phenolyzerFile ne ""){
 
 			#@geneList = split(';', $finalSortData[$dicoColumnNbr{'Gene.refGene'}] );	
+
+			my $phenoScoreMax=0;	
 			foreach my $geneName (@geneList){
 				#if (defined $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
 				if (defined $phenolyzerGene{$geneName} ){
-					$finalSortData[$dicoColumnNbr{'Phenolyzer'}] .= $phenolyzerGene{$geneName}{'Raw'}."_\t";
+					if($finalSortData[$dicoColumnNbr{'Phenolyzer'}] eq ""){
+						$finalSortData[$dicoColumnNbr{'Phenolyzer'}] = $phenolyzerGene{$geneName}{'Raw'};
+					}elsif($phenolyzerGene{$geneName}{'Raw'} > $finalSortData[$dicoColumnNbr{'Phenolyzer'}]){
+						$finalSortData[$dicoColumnNbr{'Phenolyzer'}] = $phenolyzerGene{$geneName}{'Raw'};
+						
+						if($phenoScoreMax < $phenolyzerGene{$geneName}{'normalized'}){
+							$phenoScoreMax = $phenolyzerGene{$geneName}{'normalized'};
+						}
+					}
+				
 				}
 
-			}	
+			}
+
+			#refine MPA_rank  with phenolyzer normalized score
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (0.001-($phenoScoreMax/1000 )) ;
 
 		}
 
@@ -928,18 +945,18 @@ while( <VCF> ){
 			#$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'});
 
 			if(defined $dicoInfo{'Missense_Z_score.refGene'} && $dicoInfo{'Missense_Z_score.refGene'} ne "." ){
-				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.001-((($dicoInfo{"Missense_Z_score.refGene"}+8.64)/22.52)/1000 ) ;
+				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001-((($dicoInfo{"Missense_Z_score.refGene"}+8.64)/22.52)/10000 ) ;
 			}else{
-				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.001;
+				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001;
 			}
 		
 		}elsif(defined $dicoInfo{"pLi.refGene"} && $dicoInfo{"pLi.refGene"} ne "." ){
-			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.001-(($dicoInfo{"pLi.refGene"}/1000 +  $dicoInfo{"pRec.refGene"}/10000 + $dicoInfo{"pNull.refGene"}/100000)) ;
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001-(($dicoInfo{"pLi.refGene"}/10000 +  $dicoInfo{"pRec.refGene"}/100000 + $dicoInfo{"pNull.refGene"}/1000000)) ;
 					#print $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\n";
 			
 			
 		}else{
-			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.001;
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001;
 		}
 
 
@@ -1254,6 +1271,7 @@ while( <VCF> ){
 
 			#test multiple geneNames
 			#@geneList = split(';', $finalSortData[$dicoColumnNbr{'Gene.refGene'}] );	
+			
 			foreach my $geneName (@geneList){
 
 				#ACMG
@@ -1272,16 +1290,19 @@ while( <VCF> ){
 				
 				}
 
-				#PHENOLYZER COMMENT
+				#PHENOLYZER COMMENT AND SCORE
+				
 				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} = "";
 				
 				#if(defined  $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]})
 				if(defined  $phenolyzerGene{$geneName}){
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} .= $phenolyzerGene{$geneName}{'comment'}."\n\n"  ;
-
+					
 				}
 		
 			}#END FOREACH
+
+
 
 
 
@@ -1543,14 +1564,24 @@ foreach my $geneName (sort keys %dicoGeneForHTZcompo){
 #########################################################################
 #################### Sort by MPA ranking for the output
 
+#create user friendly ranking score
+my $kindRank=0;
 
 foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 	#print $rank."\n";
 	
 	foreach my $variant ( keys %{$hashFinalSortData{$rank}}){
 
-		#print $variant."\n";
 #		$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
+		
+		#increse rank number then change final array
+		$kindRank++;
+		$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'MPA_ranking'}] = $kindRank; 
+
+		#last finalSortData assignation
+		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'finalArray'} = [@finalSortData] ; 
+
+
 
 		#create reference of Hashes
 		my $hashTemp = $hashFinalSortData{$rank}{$variant};
