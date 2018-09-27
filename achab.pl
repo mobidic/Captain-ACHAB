@@ -968,11 +968,11 @@ while( <VCF> ){
 
 		#Penalization of MPA score=5 or 6  to be after at least 7.06 score
 		if($dicoInfo{"MPA_ranking"} == 5 ){
-			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 2.04;	
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 2.061;	
 		
 		
 		}elsif( $dicoInfo{"MPA_ranking"} == 6){
-			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 1.049;			
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 1.062;			
 		}
 
 
