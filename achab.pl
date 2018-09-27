@@ -884,7 +884,7 @@ while( <VCF> ){
 			foreach my $geneName (@geneList){
 				#if (defined $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
 				if (defined $phenolyzerGene{$geneName} ){
-					if($finalSortData[$dicoColumnNbr{'Phenolyzer'}] eq ""){
+					if( ! defined $finalSortData[$dicoColumnNbr{'Phenolyzer'}]){
 						$finalSortData[$dicoColumnNbr{'Phenolyzer'}] = $phenolyzerGene{$geneName}{'Raw'};
 					}elsif($phenolyzerGene{$geneName}{'Raw'} > $finalSortData[$dicoColumnNbr{'Phenolyzer'}]){
 						$finalSortData[$dicoColumnNbr{'Phenolyzer'}] = $phenolyzerGene{$geneName}{'Raw'};
@@ -932,26 +932,31 @@ while( <VCF> ){
 				$commentMPAscore .= $keys."\n";
 			}
 			
-			#refine MPA_rank for rank 7 missense with MPA final score  or  for other ranking with pLI
-			if($keys eq "MPA_final_score" &&  $finalSortData[$dicoColumnNbr{'MPA_ranking'}] == 7 ){
-				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (10-$dicoInfo{$keys})/100;
-				#print $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\n";
-				
-			}
 		}
 
-		#refine MPA_rank  with pLI
+		#refine MPA_rank  with pLI 
 		if($finalSortData[$dicoColumnNbr{'MPA_ranking'}] >= 7 && $finalSortData[$dicoColumnNbr{'MPA_ranking'}] < 8 ){
 			#$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'});
 
 			if(defined $dicoInfo{'Missense_Z_score.refGene'} && $dicoInfo{'Missense_Z_score.refGene'} ne "." ){
-				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001-((($dicoInfo{"Missense_Z_score.refGene"}+8.64)/22.52)/10000 ) ;
+				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (0.0001-((($dicoInfo{"Missense_Z_score.refGene"}+8.64)/22.52)/10000 )) ;
 			}else{
 				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001;
 			}
+
+			#add MPA_final_score before MPA_impact
+			$finalSortData[$dicoColumnNbr{'MPA_impact'}] = $dicoInfo{"MPA_deleterious"}."_".$finalSortData[$dicoColumnNbr{'MPA_impact'}];
+
+
+			#refine MPA_rank for rank 7 missense with MPA final score  
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += ((10-$dicoInfo{"MPA_final_score"})/100);
+			#print "final_score   :   ".$finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\t".((10-$dicoInfo{"MPA_final_score"})/100)."\t".$dicoInfo{"MPA_final_score"}."\n";
+			
+
+
 		
 		}elsif(defined $dicoInfo{"pLi.refGene"} && $dicoInfo{"pLi.refGene"} ne "." ){
-			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001-(($dicoInfo{"pLi.refGene"}/10000 +  $dicoInfo{"pRec.refGene"}/100000 + $dicoInfo{"pNull.refGene"}/1000000)) ;
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (0.0001-(($dicoInfo{"pLi.refGene"}/10000 +  $dicoInfo{"pRec.refGene"}/100000 + $dicoInfo{"pNull.refGene"}/1000000))) ;
 					#print $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\n";
 			
 			
@@ -959,6 +964,16 @@ while( <VCF> ){
 			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001;
 		}
 
+
+
+		#Penalization of MPA score=5 or 6  to be after at least 7.06 score
+		if($dicoInfo{"MPA_ranking"} == 5 ){
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 2.04;	
+		
+		
+		}elsif( $dicoInfo{"MPA_ranking"} == 6){
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 1.049;			
+		}
 
 
 
@@ -1576,10 +1591,13 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 		
 		#increse rank number then change final array
 		$kindRank++;
+		
+		#print $variant ."___".  $hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'MPA_ranking'}]."\n";
 		$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'MPA_ranking'}] = $kindRank; 
 
 		#last finalSortData assignation
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'finalArray'} = [@finalSortData] ; 
+		
 
 
 
@@ -1807,7 +1825,7 @@ sub writeThisSheet {
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'Func.refGene'},		$hashTemp{'commentFunc'} ,x_scale => 3, y_scale => 3  );
 			
 			#DEBUG print commentGenotype in CHROM cells
-			$worksheet->write_comment( $worksheetLine,$hashColumn{'#CHROM'},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => $hashTemp{'nbSample'} );
+			#$worksheet->write_comment( $worksheetLine,$hashColumn{'#CHROM'},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => $hashTemp{'nbSample'} );
 			
 			
 			if ($hashTemp{'commentPhenotype'} ne ""){
