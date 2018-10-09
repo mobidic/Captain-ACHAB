@@ -260,6 +260,35 @@ No whitespace is allowed in VCF ready to Captain Achab. Replace them with unders
 sed -i 's/ /_/g' example.vcf 
 ```
 
+### Contig in VCF missing
+Contig is necessary in VCF header.
+
+### Create db.vcf input for Captain Achab
+If you doesn't have database of your variant, you can create a db.vcf with all of your vcfs and Captain ACHAB will tell you how many times the variants is found & in which sample.
+
+Put all your vcf in one folder.
+Use GATK Combine Variant to merge all VCF.
+
+Create a vcfmerge.sh file :
+```bash
+java -jar GenomeAnalysisTK.jar -T CombineVariants -R hg19.fa -o all.vcf -genotypeMergeOptions UNIQUIFY -minN 2 \ 
+```
+Add to the script all VCF :
+```bash
+for i in *.vcf; do echo --variant $i \\ >> vcfmerge.sh ; done
+```
+Run vcfmerge.sh. Then run the vcf-sample-counter.sh and you'll get the db.vcf.
+
+#### Optional : 
+If needed, you can "clean" the all.vcf with this command :
+
+```bash
+awk -F "\t" 'BEGIN{OFS="\t"}{if($1!~/^#/){$8="AN=10"}print}' all.vcf > all_clean.vcf
+```
+
+If needed, you may need to bcftools LeftAlign and bcftools Split the all_clean.vcf.
+
+
 --------------------------------------------------------------------------------
 
 **Montpellier Bioinformatique pour le Diagnostique Clinique (MoBiDiC)**
