@@ -556,7 +556,10 @@ my @CommentMPA_score = ("MPA_ranking",
 						"\n--- SPLICE ---",
 						'dbscSNV_ADA_SCORE',
 						'dbscSNV_RF_SCORE',
-						'dpsi_zscore',
+						'DS_AG',
+						'DS_AL',
+						'DS_DG',
+						'DS_DL',
 						"\n--- MISSENSE ---",
 						'LRT_pred',
 						'SIFT_pred',
@@ -801,13 +804,15 @@ while( <VCF> ){
 ########### Split INFOS #####################
 	
 		my %dicoInfo;
+		$line[7] =~ s/\\x3d/=/g;
+		$line[7] =~ s/\\x3b/;/g;
 		my @infoList = split(';', $line[7] );	
 		foreach my $info (@infoList){
 			my @infoKeyValue = split('=', $info );
 			if (scalar @infoKeyValue == 2){
 				
-				$infoKeyValue[1] =~ s/\\x3d/=/g;
-				$infoKeyValue[1] =~ s/\\x3b/;/g;
+				#$infoKeyValue[1] =~ s/\\x3d/=/g;
+				#$infoKeyValue[1] =~ s/\\x3b/;/g;
 				
 				$dicoInfo{$infoKeyValue[0]} = $infoKeyValue[1];
 				#DEBUG
