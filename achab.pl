@@ -556,10 +556,11 @@ my @CommentMPA_score = ("MPA_ranking",
 						"\n--- SPLICE ---",
 						'dbscSNV_ADA_SCORE',
 						'dbscSNV_RF_SCORE',
-						'DS_AG',
-						'DS_AL',
-						'DS_DG',
-						'DS_DL',
+						'spliceai_filtered',
+						#'DS_AG',
+						#'DS_AL',
+						#'DS_DG',
+						#'DS_DL',
 						"\n--- MISSENSE ---",
 						'LRT_pred',
 						'SIFT_pred',
@@ -804,15 +805,15 @@ while( <VCF> ){
 ########### Split INFOS #####################
 	
 		my %dicoInfo;
-		$line[7] =~ s/\\x3d/=/g;
-		$line[7] =~ s/\\x3b/;/g;
+		#$line[7] =~ s/\\x3d/=/g;
+		#$line[7] =~ s/\\x3b/;/g;
 		my @infoList = split(';', $line[7] );	
 		foreach my $info (@infoList){
 			my @infoKeyValue = split('=', $info );
 			if (scalar @infoKeyValue == 2){
 				
-				#$infoKeyValue[1] =~ s/\\x3d/=/g;
-				#$infoKeyValue[1] =~ s/\\x3b/;/g;
+				$infoKeyValue[1] =~ s/\\x3d/=/g;
+				$infoKeyValue[1] =~ s/\\x3b/;/g;
 				
 				$dicoInfo{$infoKeyValue[0]} = $infoKeyValue[1];
 				#DEBUG
@@ -848,7 +849,7 @@ while( <VCF> ){
 				else {$filterBool=1}
 			}
 			next if ($filterBool == 1);
-			next if( $dicoInfo{'MPA_ranking'} == 8);
+			next if( $dicoInfo{'MPA_ranking'} == 10);
 			#next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
 		
 		}
@@ -932,15 +933,27 @@ while( <VCF> ){
 		$commentMPAscore = "";
 		foreach my $keys (@CommentMPA_score){
 			if (defined $dicoInfo{$keys} ){
-				$commentMPAscore .= $keys."\t= ".$dicoInfo{$keys}."\n";
+				if($keys eq "spliceai_filtered"){
+					my @dicoSplice = split(';', $dicoInfo{$keys} );
+					if (scalar @dicoSplice > 2){
+						foreach my $spliceData (@dicoSplice){
+							if ($spliceData=~/^DS_/){
+								$commentMPAscore .= $keys."\t ".$spliceData."\n";
+							}
+						}
+					}else{
+						$commentMPAscore .= $keys."\t= ".$dicoInfo{$keys}."\n";
+					}
+				}else{	
+					$commentMPAscore .= $keys."\t= ".$dicoInfo{$keys}."\n";
+				}
 			}else{
 				$commentMPAscore .= $keys."\n";
-			}
-			
+			}	
 		}
 
 		#refine MPA_rank  with pLI 
-		if($finalSortData[$dicoColumnNbr{'MPA_ranking'}] >= 7 && $finalSortData[$dicoColumnNbr{'MPA_ranking'}] < 8 ){
+		if(($finalSortData[$dicoColumnNbr{'MPA_ranking'}] >= 5 && $finalSortData[$dicoColumnNbr{'MPA_ranking'}] < 6 )|| ($finalSortData[$dicoColumnNbr{'MPA_ranking'}] >= 7 && $finalSortData[$dicoColumnNbr{'MPA_ranking'}] < 8 ) || ($finalSortData[$dicoColumnNbr{'MPA_ranking'}] >= 9 && $finalSortData[$dicoColumnNbr{'MPA_ranking'}] < 10 )  ){
 			#$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'});
 
 			if(defined $dicoInfo{'Missense_Z_score.refGene'} && $dicoInfo{'Missense_Z_score.refGene'} ne "." ){
@@ -971,14 +984,14 @@ while( <VCF> ){
 
 
 
-		#Penalization of MPA score=5 or 6  to be after at least 7.06 score
-		if($dicoInfo{"MPA_ranking"} == 5 ){
-			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 2.061;	
-		
-		
-		}elsif( $dicoInfo{"MPA_ranking"} == 6){
-			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 1.062;			
-		}
+		#Penalization of MPA score=7 or 9  to be after at least 9.06 score 
+		#no need since MPA v1.1.0
+
+		#if($dicoInfo{"MPA_ranking"} == 7 ){
+		#	$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 2.061;	
+		#}elsif( $dicoInfo{"MPA_ranking"} == 9){
+		#	$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 1.062;			
+		#}
 
 
 
