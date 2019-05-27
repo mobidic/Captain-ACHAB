@@ -8,7 +8,7 @@ Captain ACHAB is a simple and useful interface to analysis of NGS data for molec
 This is the end of Excel table with so many columns ! All necessary information is available in one look.
 Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [CuteVariant](https://github.com/labsquare/CuteVariant) (.JSON).     
    
-![achab](img/achab.png)
+![achab](img/achab1.png)
 
 ### Main features
 
@@ -38,25 +38,29 @@ Default frequency threshold is 0.01 in gnomAD_genome (1%).
 
 **3. Analyse variants from top to bottom via the MPA-achab ranking :** 
 
-Ranking : from 1 to 7 and score.  
+According to MPA >= v1.1.0  Ranking : from 1 to 9 and score.  
 ![mpa](img/mpa-achab.PNG)
 
-Numbers after comma represents adjustment depending on in silico gene predictions pLi, pRec, missense Z-score.  
-- 1 - 10 with clinvar_pathogenicity : Pathogenic variants reported on ClinVar (details on the CLINSIG column) ![ClinVar](img/clinvar-achab.png)
-- 2 - 10 with stop or frameshift_impact : Premature Truncation Codon : nonsense or frameshift
-- 3,4,5 - 10 with splicing_impact (ADA, RF, Spidex) : Affecting splice variants predictions ranked by algorithm performance robustness
-- 6 - with splicing_impact (indel) - Indel in splicing regions (as there is no splicing predictions for this case)
-- 7 - with missense_impact (10 to 0) : Missense variants scores
-- 8 - with unknown_impact : Exonic variants with not clearly annotated ORFs and splicing variants not predicted pathogenic  
 
-![Mpa](img/mpa2-achab.PNG)
+- 1   clinvar_pathogenicity : Pathogenic variants reported on ClinVar (score : 10) ![ClinVar](img/clinvar-achab.png)
+- 2   stop or frameshift_impact : Premature Truncation Codon : nonsense or frameshift (score : 10)
+- 3   splicing_impact (ADA, RF) : Affecting splice variants predictions ranked by algorithm performance robustness and strength (score : 10)
+- 4   splicing_impact (spliceAI high) : Affecting splice variants predictions ranked by algorithm performance robustness and strength (score : 10)
+- 5   missense impact moderate to high impact (6-10)
+- 6   moderate splicing_impact (spliceAI moderate) (score 6)
+- 7   missense_impact moderate : Missense variants scores low impact (score : 2-6)
+- 8   low splicing impact (spliceAI low) (indel) (score : 2)
+- 9   missense_impact low : Missense variants scores low impact (score : 0-2)
+- 10  unknown impact : Exonic variants with not clearly annotated ORFs and splicing variants not predicted pathogenic ; or NULL (no annotation on genes, splice etc...) (score : 0-10) (put in new Hope output file)
+
+![Mpa](img/mpa2-achab.png)
 
 **4. Analysis first variants with good coverage :**  
 
 DP stand for Depth   
 AB for Allele Balancy  
 AD for Allele Depth (ref and alt)  
-By default, cell with be purple if AB is beneath 20% (0.2) and alt AD is under 5.  
+By default, cell is pink if AB is beneath 20% (0.2) and becomes purple when alt AD is under 5.  
 ![Genotype](img/genotype-achab.png)
 
 **5. Diagnosis analysis :**   
