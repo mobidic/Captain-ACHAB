@@ -1074,7 +1074,9 @@ while( <VCF> ){
 		#		GT:DP:AF (seqNext)
 		#
 		$caller = "";
-		if(defined $formatIndex{'AD'}){
+		if(defined $formatIndex{'VAF'}){
+			$caller = "DeepVariant";
+		}elsif(defined $formatIndex{'AD'}){
 			$caller = "GATK";
 		}elsif(defined $formatIndex{'NR'}){
 			$caller = "platypus";
