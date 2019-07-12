@@ -38,8 +38,6 @@ my $man = "USAGE : \nperl achab.pl
 \n--newHope (only popFreqThr filter is applied (no more FILTER or MPA_ranking))>";
 #\n--newHope (output only NON PASS or MPA_rank = 8 variants, default=output FILTER=PASS and MPAranking < 8 variants )>";
 
-
-
 my $help;
 my $current_line;
 my $incfile = "";
@@ -60,7 +58,6 @@ my $customInfoList = "";
 my @custInfList;
 my $mozaicRate = "" ;
 my $mozaicDP = "";
-
 
 #stuff for files
 my $candidates = "";
@@ -94,9 +91,6 @@ my @finalSortData;
 my $familyGenotype;
 my %hashFinalSortData;
 
-
-#$arguments = GetOptions( "vcf=s" => \$incfile ) or pod2usage(-vcf => "$0: argument required\n") ;
-
 GetOptions( 	"vcf=s"				=> \$incfile,
 		"case=s"			=> \$case,
 		"dad=s"				=> \$dad,
@@ -115,9 +109,6 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"mozaicDP:s"			=> \$mozaicDP,
 		"newHope"			=> \$newHope,
 		"help|h"			=> \$help);
-
-
-
 
 #check mandatory arguments
 if(defined $help || $incfile eq ""){
@@ -150,19 +141,15 @@ if($mozaicDP eq ""){
 	$mozaicDP = 5;
 }
 
-
 #check sample list param
 if(defined $trio && ($case eq "" || $dad eq "" || $mum eq "")){
 	die("TRIO option requires 3 sample names. Please, give --case, --dad and --mum sample name arguments.\n");
 }
 
-
 print  STDERR "Starting a new fishing trip ... \n" ;
 print  STDERR "Processing vcf file ... \n" ;
 
-
 open( VCF , "<$incfile" )or die("Cannot open vcf file $incfile") ;
-
 
 #TODO check if header contains required INFO
 #Parse VCF header to fill the dictionnary of parameters
@@ -185,17 +172,11 @@ while( <VCF> ){
       if ($current_line =~ /ID=(.+?),.*?Description="(.+?)"/){
 
           $dicoParam{$1}= $2;
-		  #DEBUG      print STDERR "info : ". $1 . "\tdescription: ". $2."\n";
-
-
 			    next;
 
       }else {print STDERR "pattern not found in this line: ".$current_line ."\n";next}
 
 	}elsif($current_line=~/^#CHROM/){
-		#check sample names or die
-
-
 		if (defined $trio){
 			#check if case sample name is found
 			unless ($current_line=~/\Q$case/){die("$case is not found as a sample in the VCF, please check case name.\n$current_line\n")}
@@ -204,28 +185,10 @@ while( <VCF> ){
 		}
 
 		@line = split (/\t/ , $current_line);
-
-
 		for( my $sampleIndex = 9 ; $sampleIndex < scalar @line; $sampleIndex++){
 
 			print STDERR "Found Sample ".$line[$sampleIndex]."\n";
 			push @sampleList, $line[$sampleIndex];
-
-			#for each final position for sample
-#			foreach my $finCol (keys %dicoSamples){
-
-    	    #DEBUG
-
-#				if ($dicoSamples{$finCol}{'columnName'} eq "Genotype-".$line[$sampleIndex] ){
-#					$dicoSamples{$finCol}{'columnIndex'} =  $sampleIndex;
-#					last;
-#				}
-#			}
-
-#			foreach my $name (@sampleList)
-				#if($line[$sampleIndex]
-
-
 		}
 
 		if($case eq ""){
@@ -245,8 +208,6 @@ while( <VCF> ){
 }
 close(VCF);
 
-
-
 # Create a new Excel workbook
 #
 my $workbook;
@@ -262,13 +223,9 @@ if ($outDir eq "." || -d $outDir) {
  	die("No directory $outDir");
 }
 
-
 #create default color background when pLI values are absent
 my $format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
 my $format_mozaic = $workbook->add_format(bg_color => 'purple');
-#$format_pLI -> set_pattern();
-
-
 # Add all worksheets
 my $worksheet = $workbook->add_worksheet('ALL_'.$popFreqThr);
 $worksheet->freeze_panes( 1, 0 );    # Freeze the first row
@@ -278,19 +235,13 @@ my $worksheetACMG = $workbook->add_worksheet('DS_ACMG');
 $worksheetACMG->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLineACMG = 0;
 
-
-
-
-
 #Worksheets initialization
-
 my $worksheetHTZcompo;
 my $worksheetAR;
 my $worksheetSNPmumVsCNVdad ;
 my $worksheetSNPdadVsCNVmum;
 my $worksheetDENOVO;
 my $worksheetCandidats;
-#my $worksheetDELHMZ;
 
 my $worksheetLineHTZcompo ;
 my $worksheetLineAR ;
@@ -298,7 +249,6 @@ my $worksheetLineSNPmumVsCNVdad ;
 my $worksheetLineSNPdadVsCNVmum ;
 my $worksheetLineDENOVO ;
 my $worksheetLineCandidats;
-#my $worksheetLineDELHMZ;
 
 
 #create additionnal sheet in trio analysis
@@ -323,9 +273,6 @@ if (defined $trio){
 	$worksheetLineDENOVO = 0;
 	$worksheetDENOVO->freeze_panes( 1, 0 );    # Freeze the first row
 }
-
-
-
 
 #get data from phenolyzer output (predicted_gene_score)
 my $current_gene= "";
@@ -359,7 +306,6 @@ if($phenolyzerFile ne ""){
 	close(PHENO);
 }
 
-
 if($customVCF_File ne ""){
 
 	open(CUSTOMVCF , "<$customVCF_File") or die("Cannot open phenolyzer file ".$customVCF_File) ;
@@ -391,7 +337,6 @@ if($customVCF_File ne ""){
 	}
 }
 
-
 #create sheet for candidats
 if($candidates ne ""){
 	open( CANDIDATS , "<$candidates")or die("Cannot open candidates file ".$candidates) ;
@@ -400,14 +345,11 @@ if($candidates ne ""){
 	  	$candidates_line = $_;
 		chomp $candidates_line;
 		$candidateGene{$candidates_line} = 1;
-
-
 	}
 	close(CANDIDATS);
 	$worksheetCandidats = $workbook->add_worksheet('Candidats');
 	$worksheetCandidats->freeze_panes( 1, 0 );    # Freeze the first row
 }
-
 
 #get gene involved in CNV
 if ($cnvGeneList ne ""){
@@ -428,17 +370,14 @@ if ($cnvGeneList ne ""){
 				$cnvGene{$current_gene} .= " => ".$cnvGene_List[1].";";
 				chomp $cnvGene{$current_gene};
 		}
-
 	}
 	close(CNVGENES);
-
 }
 
 #Hash of ACMG incidentalome genes
 my %ACMGgene = ("ACTA2" =>1,"ACTC1" =>1,"APC" =>1,"APOB" =>1,"ATP7B" =>1,"BMPR1A" =>1,"BRCA1" =>1,"BRCA2" =>1,"CACNA1S" =>1,"COL3A1" =>1,"DSC2" =>1,"DSG2" =>1,"DSP" =>1,"FBN1" =>1,"GLA" =>1,"KCNH2" =>1,"KCNQ1" =>1,"LDLR" =>1,"LMNA" =>1,"MEN1" =>1,"MLH1" =>1,"MSH2" =>1,"MSH6" =>1,"MUTYH" =>1,"MYBPC3" =>1,"MYH11" =>1,"MYH7" =>1,"MYL2" =>1,"MYL3" =>1,"NF2" =>1,"OTC" =>1,"PCSK9" =>1,"PKP2" =>1,"PMS2" =>1,"PRKAG2" =>1,"PTEN" =>1,"RB1" =>1,"RET" =>1,"RYR1" =>1,"RYR2" =>1,"SCN5A" =>1,"SDHAF2" =>1,"SDHB" =>1,"SDHC" =>1,"SDHD" =>1,"SMAD3" =>1,"SMAD4" =>1,"STK11" =>1,"TGFBR1" =>1,"TGFBR2" =>1,"TMEM43" =>1,"TNNI3" =>1,"TNNT2" =>1,"TP53" =>1,"TPM1" =>1,"TSC1" =>1,"TSC2" =>1,"VHL" =>1,"WT1"=>1);
 
 #counter for shifting columns according to nbr of sample
-
 my $cmpt = scalar @sampleList;
 
 #dico for sample sorting (index / dad / mum / control)
@@ -709,29 +648,19 @@ while( <VCF> ){
 		if($candidates ne ""){
 			$worksheetLineCandidats ++;
 		}
-
-
 		next;
-
 #############################################
 ##############################
 ##########  start to compute variant lines
-
 	}else {
-
-
-
 		#initialise final printable string
 		@finalSortData = ("");
 		$mozaicSamples = "";
 
 		my $alt="";
 		my $ref="";
-
 		#Split line with tab
-
 		#DEBUG		print $current_line,"\n";
-
 		#filling output line with classical first vcf columns
 		$finalSortData[$dicoColumnNbr{'#CHROM'}]=	$line[0];
 		$finalSortData[$dicoColumnNbr{'POS'}]=		$line[1];
@@ -759,16 +688,12 @@ while( <VCF> ){
 			}
 		}
 
-#DEBUG
-#print Dumper(\%dicoInfo);
-
-
 		#select only x% pop freq
 		#Use pop freq threshold as an input parameter (default = 1%)
 		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} >= $popFreqThr));
 
-
 		#FILTERING according to newHope option and filterList option
+		# TODO: inverse the condition
 		$filterBool = 0;
 		if(defined $newHope){
 			#Keep only NON PASS or PASS + MPA ranking = 8
@@ -778,10 +703,8 @@ while( <VCF> ){
 			#}
 			#next if($filterBool == 1);
 			#next if($dicoInfo{'MPA_ranking'} < 8 );
-
 		}else{
 			#remove NON PASS variant and remove MPA_Ranking = 8
-
 			switch ($finalSortData[$dicoColumnNbr{'FILTER'}]){
 				case (\@filterArray) {$filterBool=0}
 				else {$filterBool=1}
@@ -789,18 +712,11 @@ while( <VCF> ){
 			next if ($filterBool == 1);
 			next if( $dicoInfo{'MPA_ranking'} == 10);
 			#next if ($finalSortData[$dicoColumnNbr{'FILTER'}] ne "PASS");
-
 		}
-
-
-
 		#filling output line, check if INFO exists in the VCF
 		foreach my $keys (sort keys %dicoColumnNbr){
-
 #			print "keysListe\t#".$keys."#\n";
-
 			if (defined $dicoInfo{$keys}){
-
 				$finalSortData[$dicoColumnNbr{$keys}] = $dicoInfo{$keys};
 				#DEBUG
 				#print "finalSort\t".$finalSortData[$dicoColumnNbr{$keys}]."\n";
@@ -809,21 +725,15 @@ while( <VCF> ){
 			}
 		}
 
-
-
 		#split multiple gene names
 		@geneListTemp = split(';', $finalSortData[$dicoColumnNbr{'Gene.refGene'}] );
 
 		#uniq genes names
 		@geneList = do { my %seen; grep { !$seen{$_}++ } @geneListTemp };
 
-
-
 		#Phenolyzer Column
 		if($phenolyzerFile ne ""){
-
 			#@geneList = split(';', $finalSortData[$dicoColumnNbr{'Gene.refGene'}] );
-
 			my $phenoScoreMax=0;
 			foreach my $geneName (@geneList){
 				#if (defined $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
@@ -837,16 +747,11 @@ while( <VCF> ){
 							$phenoScoreMax = $phenolyzerGene{$geneName}{'normalized'};
 						}
 					}
-
 				}
-
 			}
-
 			#refine MPA_rank  with phenolyzer normalized score
 			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (0.001-($phenoScoreMax/1000 )) ;
-
 		}
-
 
 		#CNV GENES
 		if($cnvGeneList ne ""){
@@ -861,10 +766,6 @@ while( <VCF> ){
 				}
 			}
 		}
-
-
-
-
 
 		#MPA COMMENT
 		#create string with array
@@ -903,35 +804,15 @@ while( <VCF> ){
 			#add MPA_final_score before MPA_impact
 			$finalSortData[$dicoColumnNbr{'MPA_impact'}] = $dicoInfo{"MPA_deleterious"}."_".$finalSortData[$dicoColumnNbr{'MPA_impact'}];
 
-
 			#refine MPA_rank for rank 7 missense with MPA final score
 			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += ((10-$dicoInfo{"MPA_final_score"})/100);
 			#print "final_score   :   ".$finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\t".((10-$dicoInfo{"MPA_final_score"})/100)."\t".$dicoInfo{"MPA_final_score"}."\n";
-
-
-
-
 		}elsif(defined $dicoInfo{"pLi.refGene"} && $dicoInfo{"pLi.refGene"} ne "." ){
 			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (0.0001-(($dicoInfo{"pLi.refGene"}/10000 +  $dicoInfo{"pRec.refGene"}/100000 + $dicoInfo{"pNull.refGene"}/1000000))) ;
 					#print $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\n";
-
-
 		}else{
 			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 0.0001;
 		}
-
-
-
-		#Penalization of MPA score=7 or 9  to be after at least 9.06 score
-		#no need since MPA v1.1.0
-
-		#if($dicoInfo{"MPA_ranking"} == 7 ){
-		#	$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 2.061;
-		#}elsif( $dicoInfo{"MPA_ranking"} == 9){
-		#	$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += 1.062;
-		#}
-
-
 
 		#GNOMAD_EXOME COMMENT
 		#create string with array
@@ -960,7 +841,6 @@ while( <VCF> ){
 			}
 		}
 
-
 		#FUNCTION REFGENE COMMENT
 		#create string with array
 		$commentFunc = "";
@@ -982,7 +862,6 @@ while( <VCF> ){
 			}
 		}
 
-
 		#CLINVAR COMMENT (CLNSIG)
 		#create string with array
 		$commentClinvar = "";
@@ -992,8 +871,6 @@ while( <VCF> ){
 			}
 		}
 
-
-
 ############################################
 #############	Check FORMAT related to caller
 		#
@@ -1002,8 +879,6 @@ while( <VCF> ){
 		for (my $z = 0; $z < scalar @callerFormat; $z++){
 			$formatIndex{$callerFormat[$z]} = $z;
 		}
-
-
 
 		#		GT:AD:DP:GQ:PL (haplotype caller)
 		#		GT:DP:GQ  => multiallelic line , vcf not splitted => should be done before, STOP RUN?
@@ -1028,9 +903,6 @@ while( <VCF> ){
 			#print STDERR "Multi-allelic line detection. Please split the vcf file in order to get 1 allele by line\n";
 			#print STDERR $current_line ."\n";
 			#exit 1;
-
-
-
 		}else{
 			print STDERR "The Format of the Caller used for this line is unknown. Processing is a risky business. This line won't be processed.\n";
 			print STDERR $current_line ."\n";
@@ -1038,86 +910,58 @@ while( <VCF> ){
 			next;
 			#exit 1;
 		}
-
-
-
-
 		#genotype concatenation for easy hereditary status
 		$familyGenotype = "_";
 		$commentGenotype = "CALLER = ".$caller."\t QUALITY = ".$line[5]."\n\n";
 
-		#DEBUG print STDERR "commentgeno     :     ".$commentGenotype."\n";
-
 #############################################################################
 #########FILL HASH STRUCTURE FOR FINAL SORT AND OUTPUT, according to rank
-
 		#concatenate chrom_POS_REF_ALT to get variant ID
 		$variantID = $line[0]."_".$line[1]."_".$line[3]."_".$line[4]."_".$count;
 		#$variantID = $line[0]."_".$line[1]."_".$line[3]."_".$line[4]."_".$caller;
-
 
 		#CHECK IF variant is in
 		if($customVCF_File ne "" && defined $customVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}){
 			$finalSortData[$dicoColumnNbr{'customVCFannotation'}] = $customVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]};
 		}
 
-
-
 ############################################
 #############   Parse Genotypes
 		#
-
 		#for each sample sort by sample wanted
 		foreach my $finalcol ( sort {$a <=> $b}  (keys %dicoSamples) ) {
-
-			#DEBUG print "tata\t".$finalcol."\n";
-			#DEBUG	print $line[$dicoSamples{$finalcol}{'columnIndex'}]."\n";
-
 				my @genotype = split(':', $line[$dicoSamples{$finalcol}{'columnIndex'}] );
-				#my $genotype =  $line[$dicoSamples{$finalcol}{'columnIndex'}];
-
-
 				my $DP = $genotype[$formatIndex{'DP'}];		#total Depth
-
 				my $adalt;	#Alternative Allelic Depth
 				my $adref;	#Reference Allelic Depth
 				my $AB;		#Allelic balancy
 				my $AD;		#Final Allelic Depth
 
-
 				#if (scalar @genotype > 1 && $caller ne ""){
 				if ($caller ne "unknown"){
-
 					if(	$caller eq "GATK"){
-
 						#check if variant is not called
 						if ($DP eq "."){
 							$DP = 0;
 							$AD = "0,0";
-
 						}else{
 							$AD = $genotype[$formatIndex{'AD'}];
 						}
-
 					}elsif($caller eq "platypus"){
-
 						if($genotype[$formatIndex{'NR'}] =~ m/,/){
 							my @genotype_DPsplit = split(',', $genotype[$formatIndex{'NR'}]);
 							my @genotype_ADsplit = split(',', $genotype[$formatIndex{'NV'}]);
 							$DP = $genotype_DPsplit[0];
 							$AD = ($genotype_DPsplit[0] - $genotype_ADsplit[0]);
 							$AD .= ",".$genotype_ADsplit[0];
-
 						}else{
 							$DP = $genotype[$formatIndex{'NR'}];
 							$AD = ($genotype[$formatIndex{'NR'}] - $genotype[$formatIndex{'NV'}]);
 							$AD .= ",".$genotype[$formatIndex{'NV'}];
 						}
 					}elsif($caller eq "other _ GT:DP"){
-
 						$AD = 0;
 						$AD .= ",0";
-
 					}elsif($caller eq "other _ GT:DP:AF"){
 						$AD = ($DP-int($DP*$genotype[$formatIndex{'AF'}])) . "," . int($DP*$genotype[$formatIndex{'AF'}]);
 
@@ -1125,27 +969,17 @@ while( <VCF> ){
 						$AD = $genotype[$formatIndex{'RO'}];
 						$AD .= ",".$genotype[$formatIndex{'AO'}];
 					}
-
-					#DEBUG
-					#print $genotype[2]."\n";
-
-
 					#split allelic depth
 					my @tabAD = split( ',',$AD);
-
-					#print "\ntabAD\t",split( ',',$AD),"\n";
 
 					if ( scalar @tabAD > 1 ){
 						$adref = $tabAD[0];
 						$adalt = $tabAD[1];
 						my $totalAD = $adref;
 
-
-
 						for (my $j = 1; $j < scalar @tabAD; $j++){
 							$totalAD += $tabAD[$j];
 						}
-
 						if ($totalAD == 0){
 							$AB = 0;
 						}else{
@@ -1155,19 +989,13 @@ while( <VCF> ){
 								$AB .= ",";
 
 							}
-
-
 							$AB= substr $AB, 0 , ((length $AB)-1);
-
-
 						}
-
 					}else {
 						$adref = 0;
 						$adalt= 0;
 						$AB = 0;
 					}
-
 
 				}else {  # caller unknown           @genotype length < 1
 					$adref = 0;
@@ -1176,9 +1004,6 @@ while( <VCF> ){
 					$DP = $line[8];
 					$AD = $line[$dicoSamples{$finalcol}{'columnIndex'}];
 				}
-
-
-				#DEBUG print STDERR "indexSample\t".$dicoSamples{$finalcol}{'columnIndex'}."\n";
 
 				#put the genotype and comments info into string
 				#convert "1/0" genotype to "0/1" format
@@ -1191,9 +1016,7 @@ while( <VCF> ){
 
 				#record mozaic status of samples
 				if($genotype[$formatIndex{'GT'}] eq "0/1" && $AB < $mozaicRate){
-
 					$mozaicSamples  .= $dicoSamples{$finalcol}{'columnName'}.";";
-
 					#penalty to MPA ranking if trio and mozaic for the index case
 					if(defined $trio && $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
 						$finalSortData[$dicoColumnNbr{'MPA_ranking'}] 	+= 0.1;
@@ -1209,22 +1032,10 @@ while( <VCF> ){
 					}else{
 						$mozaicSamples  .= 'pink'.";";
 					}
-
-
-
-
 				}
-
 		} #END of Sample Treatment
-
-
-
-		#	print Dumper(\@finalSortData);
-
 #############################################################################
 ######### FILL HASH STRUCTURE WITH COMMENTS
-
-
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'finalArray'} = [@finalSortData] ;
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'nbSample'} = scalar keys %dicoSamples ;
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentGnomADexome'} = $commentGnomADExomeScore  ;
@@ -1256,34 +1067,20 @@ while( <VCF> ){
 					#if(defined $candidateGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]} )
 					if(defined $candidateGene{$geneName} ){
 						$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#CANDIDATES";
-
 					}
-
 				}
 
 				#PHENOLYZER COMMENT AND SCORE
-
 				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} = "";
 
 				#if(defined  $phenolyzerGene{$finalSortData[$dicoColumnNbr{'Gene.refGene'}]})
 				if(defined  $phenolyzerGene{$geneName}){
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenolyzer'} .= $phenolyzerGene{$geneName}{'comment'}."\n\n"  ;
-
 				}
-
 			}#END FOREACH
-
-
-
-
-
-
-
-
 
 ##########additionnal analysis in TRIO context according to family genotype + CNV
 			if (defined $trio){
-
 				switch ($familyGenotype){
 					#find Autosomique Recessive
 					#case ["_1/1_0/1_0/1_" , "_1/1_1/0_1/0_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#AUTOREC";}
@@ -1297,15 +1094,8 @@ while( <VCF> ){
 							unless(defined $dicoGeneForHTZcompo{$geneName}{'denovo'} ){$dicoGeneForHTZcompo{$geneName}{'denovo'} = 1 ;}
 							$dicoGeneForHTZcompo{$geneName}{'variantID'} .= $variantID."#";
 							$dicoGeneForHTZcompo{$geneName}{'MPA_ranking'} .= $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."#" ;
-
 						}
-
-
 					}
-
-
-
-
 				#Find HTZ composite
 				case ["_0/1_0/1_0/0_"] {
 
@@ -1316,7 +1106,6 @@ while( <VCF> ){
 						$dicoGeneForHTZcompo{$geneName}{'MPA_ranking'} .= $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."#" ;
 					}
 				}
-
 				case ["_0/1_0/0_0/1_"] {
 
 					foreach my $geneName (@geneList){
@@ -1326,13 +1115,9 @@ while( <VCF> ){
 						$dicoGeneForHTZcompo{$geneName}{'MPA_ranking'} .= $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."#" ;
 					}
 				}
-
 				#Find SNVvsCNV
-
 				case ["_1/1_0/0_0/1_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#SNPmCNVp";}
 				case ["_1/1_0/1_0/0_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#SNPpCNVm";}
-
-
 				case ["_0/1_0/1_0/1_"]	{
 						foreach my $geneName (@geneList){
 							if(defined $dicoGeneForHTZcompo{$geneName}{'any'} ){
@@ -1345,9 +1130,6 @@ while( <VCF> ){
 							$dicoGeneForHTZcompo{$geneName}{'MPA_ranking_any'} .= $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."#";
 						}
 				}
-
-
-
 			 }#END SWITCH
 
 			 #Check if CNV is present
@@ -1362,37 +1144,24 @@ while( <VCF> ){
 
 						$dicoGeneForHTZcompo{$geneName}{'variantID'} .= $variantID."#";
 						$dicoGeneForHTZcompo{$geneName}{'MPA_ranking'} .= $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."#" ;
-
 					}
-
 				}
-
 			} #END IF TRIO
-
-
-
 
 ##########create pLI comment and format
 		if(defined $dicoInfo{'pLi.refGene'} && $dicoInfo{'pLi.refGene'} ne "." ){
 
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} =  "pLI = ".$dicoInfo{'pLi.refGene'}."\npRec = ".$dicoInfo{'pRec.refGene'}."\npNull = ".$dicoInfo{'pNull.refGene'} ."\n\n";
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  sprintf('#%2.2X%2.2X%2.2X',($dicoInfo{'pLi.refGene'}*255 + $dicoInfo{'pRec.refGene'}*255),($dicoInfo{'pRec.refGene'}*255 + $dicoInfo{'pNull.refGene'} * 255),0) ;
-
-
         		$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'});
-
 			if(defined $dicoInfo{'Missense_Z_score.refGene'} && $dicoInfo{'Missense_Z_score.refGene'} ne "." ){
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .=  "Missense Z-score = ".$dicoInfo{'Missense_Z_score.refGene'}."\n\n";
 			}
-
 		}else{
-
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} =  "." ;
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  '#FFFFFF' ;
-
 			#$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
 		}
-
 
 ##########Add function and expression infos in comment
 		if(defined $dicoInfo{'Function_description.refGene'}  && $dicoInfo{'Function_description.refGene'} ne "." ){
@@ -1401,38 +1170,18 @@ while( <VCF> ){
 			if(defined $dicoInfo{'Tissue_specificity(Uniprot).refGene'} && $dicoInfo{'Tissue_specificity(Uniprot).refGene'} ne "."  ){
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .= "Tissue specificity:\n".$dicoInfo{'Tissue_specificity(Uniprot).refGene'}."\n";
 			}
-
 		}
-
-
 	} #END of IF-ELSE(#CHROM)
 
-
-
-
-
-#DEBUG			print Dumper(\%dicoColumnNbr);
 ##############check hereditary hypothesis or genes to fill sheets
-
-
-
-
 
 ############ THE TIME HAS COME TO FILL THE XLSX OUTPUT FILE
 
-
-
-
-
 }#END WHILE VCF
-
 
 ########################################################################
 ###################	Compute HTZ compo before writing
-
 foreach my $geneName (sort keys %dicoGeneForHTZcompo){
-
-
 	#my $MPA = $dicoGeneForHTZcompo{$geneName}{'HTZscore'};
 	#my $variant = $dicoGeneForHTZcompo{$geneName}{'HTZscore'};
 
@@ -1453,10 +1202,6 @@ foreach my $geneName (sort keys %dicoGeneForHTZcompo){
 	}
 
 	if(defined $dicoGeneForHTZcompo{$geneName}{'HTZscore'}  && $dicoGeneForHTZcompo{$geneName}{'HTZscore'} > 1  ){
-		#DEBUG
-		#print $geneName."\t".$dicoGeneForHTZcompo{$geneName}{'HTZscore'}."\n";
-
-
 		my @variantList = split( '#', $dicoGeneForHTZcompo{$geneName}{'variantID'} );
 		my @MPAList = split( '#', $dicoGeneForHTZcompo{$geneName}{'MPA_ranking'} );
 
@@ -1464,15 +1209,12 @@ foreach my $geneName (sort keys %dicoGeneForHTZcompo){
 
 			unless(defined	$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheetHTZcompo'}){
 				$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheetHTZcompo'} = "#HTZcompo";
-
-
 				#create reference of Hashes
 				my $hashTemp = $hashFinalSortData{$MPAList[$i]}{$variantList[$i]};
 				my $hashColumn_ref = \%dicoColumnNbr;
 
 ##############################################################
 ###########################      HTZ composite     #####################
-
 				#Write the HTZcompo worksheet
 				writeThisSheet ($worksheetHTZcompo,
 								$worksheetLineHTZcompo,
@@ -1482,36 +1224,26 @@ foreach my $geneName (sort keys %dicoGeneForHTZcompo){
 								$hashColumn_ref
 								);
 				$worksheetLineHTZcompo ++;
-
 			}#END unless
-
 		}#END FOR
-
-
-
 	}#END HTZscore >1
 
 	if( defined $dicoGeneForHTZcompo{$geneName}{'HTZscore'} && $dicoGeneForHTZcompo{$geneName}{'HTZscore'} > 100  ){
 		#DEBUG
 		#print $geneName."\t".$dicoGeneForHTZcompo{$geneName}{'HTZscore'}."\n";
 
-
 		my @variantList = split( '#', $dicoGeneForHTZcompo{$geneName}{'variantID_any'} );
 		my @MPAList = split( '#', $dicoGeneForHTZcompo{$geneName}{'MPA_ranking_any'} );
 
 		for(my $i=0; $i < scalar @variantList; $i ++){
-
 			unless(defined	$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheetHTZcompo'}){
 				$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheetHTZcompo'} = "#HTZcompo";
-
-
 				#create reference of Hashes
 				my $hashTemp = $hashFinalSortData{$MPAList[$i]}{$variantList[$i]};
 				my $hashColumn_ref = \%dicoColumnNbr;
 
 ##############################################################
 ###########################      HTZ composite     #####################
-
 				#Write the HTZcompo worksheet
 				writeThisSheet ($worksheetHTZcompo,
 								$worksheetLineHTZcompo,
@@ -1521,41 +1253,25 @@ foreach my $geneName (sort keys %dicoGeneForHTZcompo){
 								$hashColumn_ref
 								);
 				$worksheetLineHTZcompo ++;
-
 			}#END unless
-
 		}#END FOR
-
 	}#END HTZscore >100
-
 }
-
-
 
 #########################################################################
 #################### Sort by MPA ranking for the output
-
 #create user friendly ranking score
 my $kindRank=0;
-
 foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
-	#print $rank."\n";
 
 	foreach my $variant ( keys %{$hashFinalSortData{$rank}}){
-
 #		$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
-
 		#increse rank number then change final array
 		$kindRank++;
-
 		#print $variant ."___".  $hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'MPA_ranking'}]."\n";
 		$hashFinalSortData{$rank}{$variant}{'finalArray'}[$dicoColumnNbr{'MPA_ranking'}] = $kindRank;
-
 		#last finalSortData assignation
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'finalArray'} = [@finalSortData] ;
-
-
-
 
 		#create reference of Hashes
 		my $hashTemp = $hashFinalSortData{$rank}{$variant};
@@ -1563,7 +1279,6 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 
 ##############################################################
 ###########################      ALL     #####################
-
 		writeThisSheet ($worksheet,
 						$worksheetLine,
 						$format_pLI,
@@ -1571,12 +1286,10 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 						$hashTemp,
 						$hashColumn_ref	);
 		$worksheetLine ++;
-
 ##############################################################
 ################# ACMG DS #############
 
 		if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /ACMG/){
-
 			writeThisSheet ($worksheetACMG,
 							$worksheetLineACMG,
 							$format_pLI,
@@ -1584,7 +1297,6 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 							$hashTemp,
 							$hashColumn_ref
 						);
-
 			$worksheetLineACMG ++;
 		}
 
@@ -1592,7 +1304,6 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 ################ CANDIDATES #############
 
 		if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /CANDIDATE/){
-
 			writeThisSheet ($worksheetCandidats,
 							$worksheetLineCandidats,
 							$format_pLI,
@@ -1600,8 +1311,6 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 							$hashTemp,
 							$hashColumn_ref
 						);
-
-
 			$worksheetLineCandidats ++;
 		}
 
@@ -1610,11 +1319,9 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 ##############################################################
 
 		if(defined $trio){
-
 ##############################################################
 ################ DENOVO  ######################
 			if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /DENOVO/){
-
 				writeThisSheet ($worksheetDENOVO,
 								$worksheetLineDENOVO,
 								$format_pLI,
@@ -1623,15 +1330,12 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 								$hashColumn_ref
 							);
 				$worksheetLineDENOVO ++;
-
 				next;
-
 			}
 
 ##############################################################
 ################  AUTOSOMIC RECESSIVE HOMOZYGOUS ###############
 			if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /AUTOREC/){
-
 				writeThisSheet ($worksheetAR,
 								$worksheetLineAR,
 								$format_pLI,
@@ -1640,15 +1344,12 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 								$hashColumn_ref
 							);
 				$worksheetLineAR ++;
-
 				next;
-
 			}
 
 ##############################################################
 ################ SNPvsCNV ##########################
 			if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /SNPpCNVm/) {
-
 				writeThisSheet ($worksheetSNPdadVsCNVmum,
 								$worksheetLineSNPdadVsCNVmum,
 								$format_pLI,
@@ -1659,11 +1360,9 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 
 				$worksheetLineSNPdadVsCNVmum ++;
 				next;
-
 			}
 
 			if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /SNPmCNVp/){
-
 				writeThisSheet ($worksheetSNPmumVsCNVdad,
 								$worksheetLineSNPmumVsCNVdad,
 								$format_pLI,
@@ -1672,14 +1371,9 @@ foreach my $rank (sort {$a <=> $b} keys %hashFinalSortData){
 								$hashColumn_ref
 							);
 				$worksheetLineSNPmumVsCNVdad ++;
-
 				next;
-
 			}
-
-
 		}   # END IF TRIO
-
 	}   # END FOREACH VARIANT
 }	#END FOREACH RANK
 
@@ -1690,13 +1384,9 @@ $worksheet->autofilter('A1:Z'.$worksheetLine); # Add autofilter until the end
 if(defined $trio){
 
 	$worksheetHTZcompo->autofilter('A1:Z'.$worksheetLineHTZcompo); # Add autofilter
-
 	$worksheetAR->autofilter('A1:Z'.$worksheetLineAR); # Add autofilter
-
 	$worksheetSNPmumVsCNVdad->autofilter('A1:Z'.$worksheetLineSNPmumVsCNVdad); # Add autofilter
-
 	$worksheetSNPdadVsCNVmum->autofilter('A1:Z'.$worksheetLineSNPdadVsCNVmum); # Add autofilter
-
 	$worksheetDENOVO->autofilter('A1:Z'.$worksheetLineDENOVO); # Add autofilter
 }
 
@@ -1733,30 +1423,21 @@ sub writeThisSheet {
 			#DEBUG print commentGenotype in CHROM cells
 			#$worksheet->write_comment( $worksheetLine,$hashColumn{'#CHROM'},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => $hashTemp{'nbSample'} );
 
-
 			if ($hashTemp{'commentPhenotype'} ne ""){
-
 				$worksheet->write_comment( $worksheetLine,$hashColumn{'Phenotypes.refGene'}, $hashTemp{'commentPhenotype'} ,x_scale => 7, y_scale => 5  );
 			}
-
 			if ($hashTemp{'commentPhenolyzer'} ne ""){
 				$worksheet->write_comment( $worksheetLine,$hashColumn{'Phenolyzer'}, $hashTemp{'commentPhenolyzer'} ,x_scale => 2 );
 			}
-
 			if ($hashTemp{'commentInterVar'} ne ""){
 				$worksheet->write_comment( $worksheetLine,$hashColumn{'InterVar_automated'}, $hashTemp{'commentInterVar'} ,x_scale => 7, y_scale => 5  );
 			}
-
 			if ($hashTemp{'commentClinvar'} ne ""){
 				$worksheet->write_comment( $worksheetLine,$hashColumn{'CLNSIG'}, $hashTemp{'commentClinvar'} ,x_scale => 7, y_scale => 5  );
 			}
 
-
 			if ($hashTemp{'commentpLI'} ne "."){
-
         		$format_pLI = $workbook->add_format(bg_color => $hashTemp{'colorpLI'});
-
-
 				$worksheet->write( $worksheetLine,$hashColumn{'Gene.refGene'}, $hashTemp{'finalArray'}[$hashColumn{'Gene.refGene'}]     ,$format_pLI );
 				$worksheet->write_comment( $worksheetLine,$hashColumn{'Gene.refGene'},$hashTemp{'commentpLI'},x_scale => 5, y_scale => 5  );
 			}
@@ -1766,7 +1447,6 @@ sub writeThisSheet {
 				#recycling $format_pLI for mozaic coloring genotype
 				$format_pLI = $workbook->add_format(bg_color => 'purple');
 
-
 				for( my $sampleMozaic = 0 ; $sampleMozaic < scalar @genotypeMozaic; $sampleMozaic +=2){
 				#foreach my $sampleMozaic (@genotypeMozaic){
 					$format_pLI = $workbook->add_format(bg_color => $genotypeMozaic[$sampleMozaic+1]);
@@ -1774,7 +1454,6 @@ sub writeThisSheet {
 					#$worksheet->write( $worksheetLine,$hashColumn{$sampleMozaic}  , $hashTemp{'finalArray'}[$hashColumn{$sampleMozaic}] ,$format_pLI );
 				}
 			}
-
 }#END OF SUB
 
 exit 0;
