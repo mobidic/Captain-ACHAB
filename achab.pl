@@ -827,7 +827,7 @@ while( <VCF> ){
 
 		#select only x% pop freq 
 		#Use pop freq threshold as an input parameter (default = 1%)
-		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} >= $popFreqThr));  
+		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} > $popFreqThr));  
 	
 		
 		#FILTERING according to newHope option and filterList option
