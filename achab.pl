@@ -1152,7 +1152,7 @@ while( <VCF> ){
 				#if (scalar @genotype > 1 && $caller ne ""){
 				if ($caller ne "unknown"){
 
-					if(	$caller eq "GATK"){
+					if(	($caller eq "GATK" ) || ($caller eq "DeepVariant")){
 
 						#check if variant is not called
 						if ($DP eq "."){
