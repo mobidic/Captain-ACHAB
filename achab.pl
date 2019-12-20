@@ -187,7 +187,7 @@ while( <VCF> ){
     
 
 		$dicoParam{$1}= $2;
-		if ($1 == "Func.refGeneWithVer") {$refGene = "refGeneWithVer"}
+		if ($1 eq "Func.refGeneWithVer") {$refGene = "refGeneWithVer"}
 		#DEBUG      print STDERR "info : ". $1 . "\tdescription: ". $2."\n";
 			
 
