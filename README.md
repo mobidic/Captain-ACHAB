@@ -6,7 +6,7 @@
 
 Captain ACHAB is a simple and useful interface to analysis of NGS data for molecular diagnosis.
 This is the end of Excel table with so many columns ! All necessary information is available in one look.
-Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [CuteVariant](https://github.com/labsquare/CuteVariant) (.JSON).     
+Captain ACHAB file are readable with Excel (.xlsx) ( or soon with the open-source [CuteVariant](https://github.com/labsquare/CuteVariant) (.JSON)).     
    
 ![achab](img/achab1.png)
 
@@ -14,11 +14,11 @@ Captain ACHAB file are readable with Excel (.xlsx) or with the open-source [Cute
 
 - **Single window interpretation** : All needed informations for variants biological interpretation are accessible (Quality data, genotype, variant localization, general population frequency, in silico splice and missense predictions, clinical human disease association ...) with multi-dimensional display (colors, on hover commentary). 
 
-- **Ranked and prioritized variants** : Variants are sorted and ranked by the [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/) with additional ranking rules depending gene knowledge (pLI) and phenotypes (HPO and [Phenolyzer](https://github.com/WGLab/phenolyzer)).   
+- **Ranked and prioritized variants** : Variants are sorted and ranked by the [MoBiDiC Prioritization Algorithm](https://github.com/mobidic/MPA/) with additional ranking rules depending gene knowledge (Gnomad [LOEUF](https://www.biorxiv.org/content/biorxiv/early/2019/01/30/531210.full.pdf) ) and phenotypes (HPO and [Phenolyzer](https://github.com/WGLab/phenolyzer)).   
 
 - **Mode of inheritance** : Multiples sheets are created depending on assumed mode of inheritance (Autosomal recessive, Autosomal Dominant, Compound Heterozygous, de novo with the --trio option).
 
-- **Selection of gene panels** : --candidates option create a specific sheet with your gene of interests. 
+- **Selection of gene panels** : --candidates option create a specific sheet with your genes of interests. 
 
 - **CNV implementation** : --cnvGeneList option let you add CNV list from your CNV caller into Captain Achab. We recommand to use [MoLLuDiC](https://github.com/mobidic/MoLLuDiC/) or [MobiCNV](https://github.com/mobidic/MobiDL) for CNV calling with a output ready for Captain Achab.  
 ![CNV](img/cnv-achab.png)
@@ -74,7 +74,7 @@ Filter emptys cells "." in the Phenotypes.refGene column.
 
 **6. Research analysis :**   
 
-Select candidate gene by in silico predictions (pLi, pRec, PNull, missense Z-score), tissue specificity and gene function.  
+Select candidate gene by in silico predictions (LOEUF, missense score), tissue specificity and gene function.  
 ![Gene](img/gene-achab.png)
 
 Select candidate gene by Phenolyzer predictions  
@@ -101,59 +101,8 @@ We create a Singularity container to use Captain Achab workflow easier. All deta
 
 #### 1. Get custom annotations
 
-To get unavailable annotations in ANNOVAR database into our vcf, we are going to add missense Z-score from ExAC and OMIM database into the gene_fullxref.txt from ANNOVAR available in the example folder.
+To get unavailable annotations in ANNOVAR database into our vcf, we strongly recommend to use [AddDB_updater](https://github.com/mobidic/AddDB_updater) to add LOEUF score, OMIM database and up-to-date clinvar data into the gene_fullxref.txt from ANNOVAR available in the example folder.
 
-##### Missense Z-score 
-
-First download the database from ExAc (ftp.broadinstitute.org).
-
-```bash
-wget ftp://ftp.broadinstitute.org/pub/ExAC_release/release0.3.1/functional_gene_constraint/fordist_cleaned_exac_r03_march16_z_pli_rec_null_data.txt
-```
-Choose only columns neededs and reduce decimal to 3 numbers.
-
-```bash
-cut -f2,18 fordist_cleaned_exac_r03_march16_z_pli_rec_null_data.txt |  awk -F "\t" '{printf("%s,%.3f\n",$1,$2)}' | sed s/,/"\t"/g > missense_zscore.txt 
-vim missense_zscore.txt ## change header "gene" to "#Gene_name" and name column 2 "Missense_Z_score" to allow recognition by pandas
-```
-
-##### OMIM 
-
-According to use OMIM license, download the gene2map.txt at https://www.omim.org/downloads/.
-
-```bash
-tail -n+4 genemap2.txt | cut -f 9,13 > omim.tsv
-vim omim.tsv ## change header "Approved Symbol" to "#Gene_name" to allow recognition by pandas
-```
-
-##### Merge with the gene_fullxref.txt
-
-You need first to install pandas if needed.
-
-```bash
-pip install pandas
-```
-Use the merge function from pandas module to merge gene_fullxref.txt with OMIM and missense Z-score annotations. 
-
-```python
-import pandas
-
-fullxref = pandas.read_table('gene_fullxref.txt') 
-omim = pandas.read_table('omim.tsv')
-zscore = pandas.read_table('missense_zscore.txt')
-
-merge = pandas.merge(fullxref,omim, on="#Gene_name", how="left", left_index=True)
-mergeFinal = pandas.merge(merge,zscore, on="#Gene_name", how="left", left_index=True)
-
-mergeFinal.to_csv('gene_customfullxref_tmp.txt',sep='\t')
-```
-
-Cut the first column created by pandas and the gene_customfullxref.txt is ready to be use in ANNOVAR. sed and awk command are used to replace some characters not compatible for regex in ANNOVAR. Last awk command fill the empty cells with a point.
-
-```bash
-cut -f2- gene_customfullxref_tmp.txt | sed 's/+/plus/g' | awk 'BEGIN{FS=OFS="\t"} {for (i=6;i<=7;i++) gsub(/-/,"_",$i)}1' |  awk 'BEGIN{FS=OFS="\t"} {gsub(/-/,"_",$(NF-1))}1' | sed 's/(congenital with brain and eye anomalies,/(congenital with brain and eye anomalies),/g' | sed 's/s-/s_/g' | awk -F"\t" -v OFS="\t" '{for (i=1;i<=NF;i++) {if ($i == "") $i="."} print $0}' > gene_customfullxref.txt
-rm gene_customfullxref_tmp.txt 
-```
 
 #### 2. Annovar annotation 
 
@@ -234,7 +183,12 @@ Command line to use Captain ACHAB
                         --mozaicRate <mozaic rate value from 0 to 1, it will color 0/1 genotype according to this value  (default=0.2 as 20%)>
                         --mozaicDP <ALT variant Depth, number of read supporting ALT, it will give darker color to the 0/1 genotype  (default=5)>
                         --newHope (only popFreqThr filter is applied (no more filterList nor MPA_ranking filtering)
+                        --affected <comma separated list of samples affected by phenotype (assuming they support the same genotype) >
+                        --favouriteGeneRef <File with transcript references to extract in a new column (1 transcript by line) >
+                        --filterCustomVCF <integer value, penalizes variant if its frequency in the customVCF is greater than [value] (default key of info field : found=[value])  >
+                        --filterCustomVCFRegex <string pattern used as regex to search for a specific field to filter customVCF (default key of info field: 'found=')  >";
                         --help (print this command usage)
+
 
 ```
 
@@ -295,7 +249,7 @@ If needed, you may need to bcftools LeftAlign and bcftools Split the all_clean.v
 
 --------------------------------------------------------------------------------
 
-**Montpellier Bioinformatique pour le Diagnostique Clinique (MoBiDiC)**
+**Montpellier Bioinformatique pour le Diagnostic Clinique (MoBiDiC)**
 
 *CHU de Montpellier*
 
