@@ -134,10 +134,10 @@ my @strangerHMZ;
 # METADATA
 
 # inheritance checking test
-my $dadVariant = 0;
-my $mumVariant = 0;
-my $caseDadVariant = 0;
-my $caseMumVariant = 0;
+my $dadVariant = 0.1;
+my $mumVariant = 0.1;
+my $caseDadVariant = 0.1;
+my $caseMumVariant = 0.1;
 
 my $vcfHeader = "";
 
@@ -809,7 +809,8 @@ my @CommentMPA_score = ("MPA_ranking",
 						'MutationTaster_pred',
 						'fathmm-MKL_coding_pred');
 
-my $pLI_Comment = "pLI - the probability of being loss-of-function intolerant (intolerant of both heterozygous and homozygous lof variants)\npRec - the probability of being intolerant of homozygous, but not heterozygous lof variants\npNull - the probability of being tolerant of both heterozygous and homozygous lof variants";
+#my $pLI_Comment = "pLI - the probability of being loss-of-function intolerant (intolerant of both heterozygous and homozygous lof variants)\npRec - the probability of being intolerant of homozygous, but not heterozygous lof variants\npNull - the probability of being tolerant of both heterozygous and homozygous lof variants";
+my $pLI_Comment = "LOEUF stands for the \"loss-of-function observed/expected upper bound fraction\". \nIt is a conservative estimate of the observed/expected ratio, based on the upper bound of a Poisson-derived confidence interval around the ratio. \nLow LOEUF scores (Red) indicate strong selection against predicted loss-of-function (pLoF) variation in a given gene, \nwhile high LOEUF scores (green) suggest a relatively higher tolerance to inactivation.";
 
 my @CommentGnomadGenome = ('gnomAD_genome_ALL',
                            'gnomAD_genome_AFR',
