@@ -1661,7 +1661,7 @@ while( <VCF> ){
 				#find Autosomique Recessive
 				#case ["_1/1_0/1_0/1_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#AUTOREC";}
 				#TODO
-				case m/^_1\/1_0\/1_0\/1_(1\/1_){$NTaffectedCmpt}(0\/1_){$NTnonAffectedCmpt}/ {$worksheetTAG .= "#AUTOREC";}
+				case m/^_1\/1_0\/1_0\/1_(1\/1_){$NTaffectedCmpt}(0\/[01]_){$NTnonAffectedCmpt}/ {$worksheetTAG .= "#AUTOREC";}
 
 
 				#Find de novo
@@ -1717,7 +1717,7 @@ while( <VCF> ){
 					
 				#case ["_0/1_0/1_0/1_"]	{
 				#TODO 
-				case m/^_0\/1_0\/1_0\/1_(0\/1_){$NTaffectedCmpt}(0\/1_){$NTnonAffectedCmpt}/ {
+				case m/^_0\/1_0\/1_0\/1_(0\/1_){$NTaffectedCmpt}(0\/[01]_){$NTnonAffectedCmpt}/ {
 					foreach my $geneName (@geneList){
 						if(defined $dicoGeneForHTZcompo{$geneName}{'any'} ){
 #							$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#SNPpCNVm";}
