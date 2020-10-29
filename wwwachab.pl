@@ -569,8 +569,8 @@ if($candidates ne ""){
 		chomp $candidates_line;
 
 		if($candidates_line =~ m/#/ ){
-			$CANDID_TAG = $candidates_line;
 			$candidates_line =~ s/#//g;
+			$CANDID_TAG = $candidates_line;
 			$tagsHash{$candidates_line} = $candidates_line; 
 	
 			next;
@@ -1658,19 +1658,19 @@ while( <VCF> ){
 					
 					if($genotype[$formatIndex{'GT'}] eq "1/1"){
 						$mozaicSamples  .= 'cyan'.";";
-						$hashColor{$dicoSamples{$finalcol}{'columnName'}} = 'cyan';
+						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'cyan';
 
 					}elsif($adalt < $mozaicDP){
 						$mozaicSamples  .= 'purple'.";";
-						$hashColor{$dicoSamples{$finalcol}{'columnName'}} = 'purple';
+						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'purple';
 					}else{				
 						$mozaicSamples  .= 'pink'.";";
-						$hashColor{$dicoSamples{$finalcol}{'columnName'}} = 'pink';
+						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'pink';
 					}
 					
 
 				}else{
-					$hashColor{$dicoSamples{$finalcol}{'columnName'}} = 'inherit';
+					$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'inherit';
 				}
 
 
@@ -1872,6 +1872,9 @@ while( <VCF> ){
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenotype'} = $commentPhenotype  ;
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentClinvar'} = $commentClinvar  ;
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'genotypeMozaic'} = $mozaicSamples ;
+		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'hashColor'} = \%hashColor ;
+
+	
 
 		#initialize worksheet
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} = $worksheetTAG;
@@ -2370,8 +2373,9 @@ for( my $fieldNbr = 0 ; $fieldNbr < scalar @{$hashFinalSortData{$rank}{$variant}
 		case ( 10 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentFunc'}."</span></div> "   }
 		case ( 11 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentGenotype'}."</span></div>"   }
 		else{	
-			if ( defined $hashColor{$fieldNbr}){
-				$htmlALL .= "\t<td style=\"background-color:".$hashColor{$fieldNbr}."\"><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."</div>";    
+			if ( defined $hashFinalSortData{$rank}{$variant}{'hashColor'}{$fieldNbr}){
+			print $hashFinalSortData{$rank}{$variant}{'hashColor'}{$fieldNbr}."\n";
+				$htmlALL .= "\t<td style=\"background-color:".$hashFinalSortData{$rank}{$variant}{'hashColor'}{$fieldNbr}."\"><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."</div>";    
 			}else{
 				if (defined $hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]){
 					$htmlALL .= "\t<td><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."</div>" ;   
