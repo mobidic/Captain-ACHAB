@@ -386,25 +386,29 @@ my $worksheet = $workbook->add_worksheet('ALL_'.$popFreqThr);
 $worksheet->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLine = 0;
 
-$tagsHash{'ACMG'} = "DS_ACMG" ; 
+$tagsHash{'ACMG'}{'label'} = "DS_ACMG" ; 
+$tagsHash{'ACMG'}{'count'} = 0 ; 
 my $worksheetACMG = $workbook->add_worksheet('DS_ACMG');
 $worksheetACMG->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLineACMG = 0;
 
 # Meta Data worksheet
-$tagsHash{'META'} = "METADATA" ; 
+$tagsHash{'META'}{'label'}  = "METADATA" ; 
+$tagsHash{'META'}{'count'}  = 0 ; 
 my $worksheetMETA = $workbook->add_worksheet('META');
 $worksheetMETA->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLineMETA = 0;
 
 # OMIM worksheets
-$tagsHash{'OMIMDOM'} = 'OMIM_DOM' ; 
+$tagsHash{'OMIMDOM'}{'label'} = 'OMIM_DOM' ; 
+$tagsHash{'OMIMDOM'}{'count'} = 0 ; 
 my $worksheetOMIMDOM = $workbook->add_worksheet('OMIM_DOM');
 $worksheetOMIMDOM->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLineOMIMDOM = 0;
 
 # OMIM worksheets
-$tagsHash{'OMIMREC'} = 'OMIM_REC' ; 
+$tagsHash{'OMIMREC'}{'label'} = 'OMIM_REC' ; 
+$tagsHash{'OMIMREC'}{'count'} = 0 ; 
 my $worksheetOMIMREC = $workbook->add_worksheet('OMIM_REC');
 $worksheetOMIMREC->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLineOMIMREC = 0;
@@ -430,27 +434,32 @@ my $worksheetLineCandidats;
 #create additionnal sheet in trio analysis
 if (defined $trio){
 
-	$tagsHash{'DENOVO'} = 'DENOVO' ; 
+	$tagsHash{'DENOVO'}{'label'} = 'DENOVO' ; 
+	$tagsHash{'DENOVO'}{'count'} = 0 ; 
 	$worksheetDENOVO = $workbook->add_worksheet('DENOVO');
 	$worksheetLineDENOVO = 0;
 	$worksheetDENOVO->freeze_panes( 1, 0 );    # Freeze the first row
 
-	$tagsHash{'AR'} = 'AR' ; 
+	$tagsHash{'AR'}{'label'} = 'AR' ; 
+	$tagsHash{'AR'}{'count'} = 0 ; 
 	$worksheetAR = $workbook->add_worksheet('AR');
 	$worksheetLineAR = 0;
 	$worksheetAR->freeze_panes( 1, 0 );    # Freeze the first row
   
-	$tagsHash{'HTZ_compo'} = 'HTZ_compo' ; 
+	$tagsHash{'HTZ_compo'}{'label'} = 'HTZ_compo' ; 
+	$tagsHash{'HTZ_compo'}{'count'} = 0 ; 
 	$worksheetHTZcompo = $workbook->add_worksheet('HTZ_compo');
 	$worksheetLineHTZcompo = 0;
 	$worksheetHTZcompo->freeze_panes( 1, 0 );    # Freeze the first row
 
-	$tagsHash{'SNVmumVsCNVdad'} = 'SNVmumVsCNVdad' ; 
+	$tagsHash{'SNVmumVsCNVdad'}{'label'} = 'SNVmumVsCNVdad' ; 
+	$tagsHash{'SNVmumVsCNVdad'}{'count'} = 0 ; 
 	$worksheetSNPmumVsCNVdad = $workbook->add_worksheet('SNVmumVsCNVdad');
 	$worksheetLineSNPmumVsCNVdad = 0;
 	$worksheetSNPmumVsCNVdad->freeze_panes( 1, 0 );    # Freeze the first row
   
-	$tagsHash{'SNVdadVsCNVmum'} = 'SNVdadVsCNVmum' ; 
+	$tagsHash{'SNVdadVsCNVmum'}{'label'} = 'SNVdadVsCNVmum' ; 
+	$tagsHash{'SNVdadVsCNVmum'}{'count'} = 0 ; 
 	$worksheetSNPdadVsCNVmum = $workbook->add_worksheet('SNVdadVsCNVmum');
 	$worksheetLineSNPdadVsCNVmum = 0;
 	$worksheetSNPdadVsCNVmum->freeze_panes( 1, 0 );    # Freeze the first row
@@ -463,22 +472,26 @@ if (defined $trio){
 
 }else{
 	
-	$tagsHash{'DENOVO'} = 'DOM' ; 
+	$tagsHash{'DENOVO'}{'label'} = 'DOM' ; 
+	$tagsHash{'DENOVO'}{'count'} = 0 ; 
 	$worksheetDENOVO = $workbook->add_worksheet('DOM');
 	$worksheetLineDENOVO = 0;
 	$worksheetDENOVO->freeze_panes( 1, 0 );    # Freeze the first row
 
-	$tagsHash{'AR'} = 'REC' ; 
+	$tagsHash{'AR'}{'label'} = 'REC' ; 
+	$tagsHash{'AR'}{'count'} = 0 ; 
 	$worksheetAR = $workbook->add_worksheet('REC');
 	$worksheetLineAR = 0;
 	$worksheetAR->freeze_panes( 1, 0 );    # Freeze the first row
 	
 	if ( @affectedArray){
-		$tagsHash{'SNVmumVsCNVdad'} = 'HTZ' ; 
+		$tagsHash{'SNVmumVsCNVdad'}{'label'} = 'HTZ' ; 
+		$tagsHash{'SNVmumVsCNVdad'}{'count'} = 0 ; 
 		$worksheetSNPmumVsCNVdad = $workbook->add_worksheet('HTZ');
 	
 	}else{
-		$tagsHash{'SNVmumVsCNVdad'} = 'HMZonly' ; 
+		$tagsHash{'SNVmumVsCNVdad'}{'label'} = 'HMZonly' ; 
+		$tagsHash{'SNVmumVsCNVdad'}{'count'} = 0 ; 
 		$worksheetSNPmumVsCNVdad = $workbook->add_worksheet('HMZonly');
 	}
 	$worksheetLineSNPmumVsCNVdad = 0;
@@ -571,7 +584,8 @@ if($candidates ne ""){
 		if($candidates_line =~ m/#/ ){
 			$candidates_line =~ s/#//g;
 			$CANDID_TAG = $candidates_line;
-			$tagsHash{$candidates_line} = $candidates_line; 
+			$tagsHash{$candidates_line}{'label'} = $candidates_line; 
+			$tagsHash{$candidates_line}{'count'} = 0; 
 	
 			next;
 		}
@@ -1872,8 +1886,10 @@ while( <VCF> ){
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentPhenotype'} = $commentPhenotype  ;
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentClinvar'} = $commentClinvar  ;
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'genotypeMozaic'} = $mozaicSamples ;
-		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'hashColor'} = \%hashColor ;
-
+		# attribute mozaic color
+		foreach my $colNbr (keys %hashColor){
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'hashColor'}{$colNbr} = $hashColor{$colNbr} ;
+		}
 	
 
 		#initialize worksheet
@@ -2305,7 +2321,7 @@ my $htmlEndTable = "</tbody>\n</table>\n</div>\n\n\n";
 
 my $htmlEnd = "<div class=\"tab\">\n<input type=\"button\" class=\"tablinks\" value=\"ALL\" onclick=\"filter('ALL')\">\n" ;
 	foreach my $tag ( keys %tagsHash){
-		$htmlEnd .= "<input type=\"button\" class=\"tablinks\" value=\"".$tagsHash{$tag}."\" onclick=\"filter('".$tag."')\" >\n" ;
+		$htmlEnd .= "<input type=\"button\" class=\"tablinks\" value=\"".$tagsHash{$tag}{'label'}." (".$tagsHash{$tag}{'count'}.")\" onclick=\"filter('".$tag."')\" >\n" ;
 	}
 $htmlEnd .= "</div>" ;
 
@@ -2371,10 +2387,15 @@ for( my $fieldNbr = 0 ; $fieldNbr < scalar @{$hashFinalSortData{$rank}{$variant}
 		case ( 7 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentClinvar'}."</span></div> "   }
 		case ( 8 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentInterVar'}."</span></div> "   }
 		case ( 10 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentFunc'}."</span></div> "   }
-		case ( 11 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentGenotype'}."</span></div>"   }
+		case ( 11 ) { 
+			if ( defined $hashFinalSortData{$rank}{$variant}{'hashColor'}{$fieldNbr}){
+				$htmlALL .= "\t<td style=\"background-color:".$hashFinalSortData{$rank}{$variant}{'hashColor'}{$fieldNbr}."\"><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentGenotype'}."</span></div>";
+			}else{
+				$htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentGenotype'}."</span></div>";
+			}
+		}
 		else{	
 			if ( defined $hashFinalSortData{$rank}{$variant}{'hashColor'}{$fieldNbr}){
-			print $hashFinalSortData{$rank}{$variant}{'hashColor'}{$fieldNbr}."\n";
 				$htmlALL .= "\t<td style=\"background-color:".$hashFinalSortData{$rank}{$variant}{'hashColor'}{$fieldNbr}."\"><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."</div>";    
 			}else{
 				if (defined $hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]){
