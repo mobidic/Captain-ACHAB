@@ -440,26 +440,26 @@ if (defined $trio){
 	$worksheetLineDENOVO = 0;
 	$worksheetDENOVO->freeze_panes( 1, 0 );    # Freeze the first row
 
-	$tagsHash{'AR'}{'label'} = 'AR' ; 
-	$tagsHash{'AR'}{'count'} = 0 ; 
+	$tagsHash{'AUTOREC'}{'label'} = 'AR' ; 
+	$tagsHash{'AUTOREC'}{'count'} = 0 ; 
 	$worksheetAR = $workbook->add_worksheet('AR');
 	$worksheetLineAR = 0;
 	$worksheetAR->freeze_panes( 1, 0 );    # Freeze the first row
   
-	$tagsHash{'HTZ_compo'}{'label'} = 'HTZ_compo' ; 
-	$tagsHash{'HTZ_compo'}{'count'} = 0 ; 
+	$tagsHash{'HTZcompo'}{'label'} = 'HTZ_compo' ; 
+	$tagsHash{'HTZcompo'}{'count'} = 0 ; 
 	$worksheetHTZcompo = $workbook->add_worksheet('HTZ_compo');
 	$worksheetLineHTZcompo = 0;
 	$worksheetHTZcompo->freeze_panes( 1, 0 );    # Freeze the first row
 
-	$tagsHash{'SNVmumVsCNVdad'}{'label'} = 'SNVmumVsCNVdad' ; 
-	$tagsHash{'SNVmumVsCNVdad'}{'count'} = 0 ; 
+	$tagsHash{'SNPmCNVp'}{'label'} = 'SNVmumVsCNVdad' ; 
+	$tagsHash{'SNPmCNVp'}{'count'} = 0 ; 
 	$worksheetSNPmumVsCNVdad = $workbook->add_worksheet('SNVmumVsCNVdad');
 	$worksheetLineSNPmumVsCNVdad = 0;
 	$worksheetSNPmumVsCNVdad->freeze_panes( 1, 0 );    # Freeze the first row
   
-	$tagsHash{'SNVdadVsCNVmum'}{'label'} = 'SNVdadVsCNVmum' ; 
-	$tagsHash{'SNVdadVsCNVmum'}{'count'} = 0 ; 
+	$tagsHash{'SNPpCNVm'}{'label'} = 'SNVdadVsCNVmum' ; 
+	$tagsHash{'SNPpCNVm'}{'count'} = 0 ; 
 	$worksheetSNPdadVsCNVmum = $workbook->add_worksheet('SNVdadVsCNVmum');
 	$worksheetLineSNPdadVsCNVmum = 0;
 	$worksheetSNPdadVsCNVmum->freeze_panes( 1, 0 );    # Freeze the first row
@@ -478,20 +478,20 @@ if (defined $trio){
 	$worksheetLineDENOVO = 0;
 	$worksheetDENOVO->freeze_panes( 1, 0 );    # Freeze the first row
 
-	$tagsHash{'AR'}{'label'} = 'REC' ; 
-	$tagsHash{'AR'}{'count'} = 0 ; 
+	$tagsHash{'AUTOREC'}{'label'} = 'REC' ; 
+	$tagsHash{'AUTOREC'}{'count'} = 0 ; 
 	$worksheetAR = $workbook->add_worksheet('REC');
 	$worksheetLineAR = 0;
 	$worksheetAR->freeze_panes( 1, 0 );    # Freeze the first row
 	
 	if ( @affectedArray){
-		$tagsHash{'SNVmumVsCNVdad'}{'label'} = 'HTZ' ; 
-		$tagsHash{'SNVmumVsCNVdad'}{'count'} = 0 ; 
+		$tagsHash{'SNPmCNVp'}{'label'} = 'HTZ' ; 
+		$tagsHash{'SNPmCNVp'}{'count'} = 0 ; 
 		$worksheetSNPmumVsCNVdad = $workbook->add_worksheet('HTZ');
 	
 	}else{
-		$tagsHash{'SNVmumVsCNVdad'}{'label'} = 'HMZonly' ; 
-		$tagsHash{'SNVmumVsCNVdad'}{'count'} = 0 ; 
+		$tagsHash{'SNPmCNVp'}{'label'} = 'HMZonly' ; 
+		$tagsHash{'SNPmCNVp'}{'count'} = 0 ; 
 		$worksheetSNPmumVsCNVdad = $workbook->add_worksheet('HMZonly');
 	}
 	$worksheetLineSNPmumVsCNVdad = 0;
@@ -1358,10 +1358,12 @@ while( <VCF> ){
 
             if($dicoInfo{'Phenotypes.'.$refGene} =~ m/dominant/ ){ 
                 $worksheetTAG .= " OMIMDOM";
+				$tagsHash{"OMIMDOM"}{'count'} ++;
             }
             
             if($dicoInfo{'Phenotypes.'.$refGene} =~ m/recessive/ ){ 
                 $worksheetTAG .= " OMIMREC";
+				$tagsHash{"OMIMREC"}{'count'} ++;
             }
 
         }
@@ -1740,14 +1742,14 @@ while( <VCF> ){
 				#find Autosomique Recessive
 				#case ["_1/1_0/1_0/1_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#AUTOREC";}
 				#TODO
-				case m/^_1\/1_0\/1_0\/1_(1\/1_){$NTaffectedCmpt}(0\/1_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " AUTOREC";}
+				case m/^_1\/1_0\/1_0\/1_(1\/1_){$NTaffectedCmpt}(0\/1_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " AUTOREC"; $tagsHash{'AUTOREC'}{'count'} ++;   }
 
 
 				#Find de novo
 				#case ["_1/1_0/0_0/0_" ,"_0/1_0/0_0/0_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#DENOVO";
 					
 				#TODO 
-				case m/^_[01]\/1_0\/0_0\/0_([01]\/1_){$NTaffectedCmpt}(0\/0_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " DENOVO";
+				case m/^_[01]\/1_0\/0_0\/0_([01]\/1_){$NTaffectedCmpt}(0\/0_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " DENOVO"; $tagsHash{'DENOVO'}{'count'} ++; 
 
 					foreach my $geneName (@geneList){
 						unless(defined $dicoGeneForHTZcompo{$geneName}{'denovo'} ){$dicoGeneForHTZcompo{$geneName}{'denovo'} = 1 ;}
@@ -1787,11 +1789,11 @@ while( <VCF> ){
 				#Find SNVvsCNV
 				#case ["_1/1_0/0_0/1_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#SNPmCNVp";}
 				#TODO 
-				case m/^_1\/1_0\/0_0\/1_(1\/1_){$NTaffectedCmpt}(0\/[01]_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " SNPmCNVp";}
+				case m/^_1\/1_0\/0_0\/1_(1\/1_){$NTaffectedCmpt}(0\/[01]_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " SNPmCNVp";$tagsHash{'SNPmCNVp'}{'count'} ++; }
 
 				#case ["_1/1_0/1_0/0_"] {$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#SNPpCNVm";}
 				#TODO 
-				case m/^_1\/1_0\/1_0\/0_(1\/1_){$NTaffectedCmpt}(0\/[01]_){$NTnonAffectedCmpt}/ {$worksheetTAG  .= " SNPpCNVm";}
+				case m/^_1\/1_0\/1_0\/0_(1\/1_){$NTaffectedCmpt}(0\/[01]_){$NTnonAffectedCmpt}/ {$worksheetTAG  .= " SNPpCNVm";$tagsHash{'SNPpCNVm'}{'count'} ++; }
 
 					
 				#case ["_0/1_0/1_0/1_"]	{
@@ -1834,14 +1836,14 @@ while( <VCF> ){
 			switch ($familyGenotype){
 				
 				#find Autosomique Recessive
-				case m/^_(1\/1_){$NTaffectedCmpt}(0\/1_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " AUTOREC";}
+				case m/^_(1\/1_){$NTaffectedCmpt}(0\/1_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " AUTOREC";$tagsHash{'AUTOREC'}{'count'} ++; }
 
 				#Find de novo
-				case m/^_(1\/1_){$NTaffectedCmpt}(0\/0_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " DENOVO";}
-				case m/^_(0\/1_){$NTaffectedCmpt}(0\/0_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " DENOVO";}
+				case m/^_(1\/1_){$NTaffectedCmpt}(0\/0_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " DENOVO";$tagsHash{'DENOVO'}{'count'} ++; }
+				case m/^_(0\/1_){$NTaffectedCmpt}(0\/0_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " DENOVO";$tagsHash{'DENOVO'}{'count'} ++; }
 
 				#Find HTZ composite or should be "dominant" term
-				case m/^_(0\/1_){$NTaffectedCmpt}(0\/[01]_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " SNPmCNVp";}
+				case m/^_(0\/1_){$NTaffectedCmpt}(0\/[01]_){$NTnonAffectedCmpt}/ {$worksheetTAG .= " SNPmCNVp";$tagsHash{'SNPmCNVp'}{'count'} ++; }
 
 			}
 				
@@ -1855,12 +1857,12 @@ while( <VCF> ){
 			@strangerHMZ = $familyGenotype =~ m/1\/1/g;
 
 			if (scalar @strangerHTZ > 0 && scalar @strangerHTZ < 2 && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHTZ == $cmpt)){
-				$worksheetTAG .= " DENOVO";
+				$worksheetTAG .= " DENOVO";$tagsHash{'DENOVO'}{'count'} ++; 
 				#$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#DENOVO";
 			}elsif (scalar @strangerHMZ > 0 && scalar @strangerHMZ < 2 && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHTZ + scalar @strangerHMZ == $cmpt)){
-				$worksheetTAG .= " AUTOREC";
+				$worksheetTAG .= " AUTOREC";$tagsHash{'AUTOREC'}{'count'} ++; 
 			}elsif (scalar @strangerHMZ > 0 && scalar @strangerHMZ < 2 && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHMZ == $cmpt)){
-				$worksheetTAG .= " SNPmCNVp";
+				$worksheetTAG .= " SNPmCNVp";$tagsHash{'SNPmCNVp'}{'count'} ++; 
 			}
 
 		}  # END OF STRANGER MODE
@@ -1905,6 +1907,7 @@ while( <VCF> ){
 			#if(defined $ACMGgene{$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]} )
 			if(defined $ACMGgene{$geneName} ){
 				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= " ACMG";
+				$tagsHash{'ACMG'}{'count'} ++; 
 			}
 				
 			#CANDIDATES
@@ -1913,6 +1916,11 @@ while( <VCF> ){
 				if(defined $candidateGene{$geneName} ){
 					#$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#CANDIDATES";
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .=    " ".$candidateGene{$geneName};		
+					
+                	my @pathoTAG = split( ' ', $candidateGene{$geneName} );    
+					for(my $i=0; $i < scalar @pathoTAG; $i ++){
+						 $tagsHash{@pathoTAG[$i]}{'count'} ++;
+					}
 				}
 				
 			}
@@ -2166,7 +2174,7 @@ var filter;
 
 
 
-	var table = \$('#table').DataTable(        {\"order\": [] ,\"lengthMenu\":[ [ 50, 100, -1 ],[ 50, 100, \"All\" ]], \"fixedHeader\": true, \"orderCellsTop\": true, \"oLanguage\": { \"sLengthMenu\": \"Show _MENU_ lines\",\"sInfo\": \"Showing _START_ to _END_ of _TOTAL_ lines\" } } );
+	var table = \$('#table').DataTable(        {\"dom\": 'ift', \"order\": [] ,\"lengthMenu\":[ [ -1 ],[ \"All\" ]], \"fixedHeader\": true, \"orderCellsTop\": true, \"oLanguage\": {\"sInfo\": \"TOTAL: _TOTAL_ lines\" } } );
 
 
 filter = function  (cat) {
@@ -2315,14 +2323,21 @@ my $htmlALL= "<div id=\"ALL\" class=\"tabcontent\">\n\t<table id='table' class=\
 #my $htmlMETA="<div id=\"METADATA\" class=\"tabcontent\">\n\t<table id='tabMETADATA' class='display' >\n\t\t<thead><tr>".$htmlStartTable;
 
 
-
-
 my $htmlEndTable = "</tbody>\n</table>\n</div>\n\n\n";
 
-my $htmlEnd = "<div class=\"tab\">\n<input type=\"button\" class=\"tablinks\" value=\"ALL\" onclick=\"filter('ALL')\">\n" ;
-	foreach my $tag ( keys %tagsHash){
+my $htmlEnd = "<div class=\"tab\">\n<input type=\"button\" class=\"tablinks\" value=\"ALL_".$popFreqThr."\" onclick=\"filter('ALL')\">\n" ;
+
+#sort tag by number of variant
+
+my @tagSort = sort { $tagsHash{$b}{'count'}<=>  $tagsHash{$a}{'count'}  } keys %tagsHash ; 
+foreach my $tag ( @tagSort){
+		#print $tag."_".$tagsHash{$tag}{'label'}."\n";
 		$htmlEnd .= "<input type=\"button\" class=\"tablinks\" value=\"".$tagsHash{$tag}{'label'}." (".$tagsHash{$tag}{'count'}.")\" onclick=\"filter('".$tag."')\" >\n" ;
-	}
+}
+#foreach my $tag ( keys %tagsHash){
+#		print $tag."_".$tagsHash{$tag}{'label'}."\n";
+#		$htmlEnd .= "<input type=\"button\" class=\"tablinks\" value=\"".$tagsHash{$tag}{'label'}." (".$tagsHash{$tag}{'count'}.")\" onclick=\"filter('".$tag."')\" >\n" ;
+#}
 $htmlEnd .= "</div>" ;
 
 $htmlEnd .= "\n</body>\n</html>";
