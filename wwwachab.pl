@@ -394,7 +394,7 @@ my $worksheetLineACMG = 0;
 
 # Meta Data worksheet
 $tagsHash{'META'}{'label'}  = "METADATA" ; 
-$tagsHash{'META'}{'count'}  = 0 ; 
+$tagsHash{'META'}{'count'}  = 1 ; 
 my $worksheetMETA = $workbook->add_worksheet('META');
 $worksheetMETA->freeze_panes( 1, 0 );    # Freeze the first row
 my $worksheetLineMETA = 0;
@@ -2068,6 +2068,8 @@ foreach my $geneName (sort keys %dicoGeneForHTZcompo){
 			
 			unless(defined	$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheetHTZcompo'}){
 				$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheetHTZcompo'} = "#HTZcompo";	
+				$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheet'} .= " HTZcompo";
+				$tagsHash{'HTZcompo'}{'count'} ++;
 				
 
 				#create reference of Hashes
@@ -2107,6 +2109,8 @@ foreach my $geneName (sort keys %dicoGeneForHTZcompo){
 			
 			unless(defined	$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheetHTZcompo'}){
 				$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheetHTZcompo'} = "#HTZcompo";	
+				$hashFinalSortData{$MPAList[$i]}{$variantList[$i]}{'worksheet'} .= " HTZcompo";	
+				$tagsHash{'HTZcompo'}{'count'} ++;
 				
 
 				#create reference of Hashes
@@ -2179,18 +2183,39 @@ var filter;
 
 filter = function  (cat) {
 
-	var rowunselected = document.getElementsByTagName(\"TR\");
-	for (i = 0; i < rowunselected.length; i++) {
-		rowunselected[i].style.visibility = \"collapse\";
-	}
-	var rowselect = document.getElementById('table').getElementsByClassName(cat);
-	for (i = 0; i < rowselect.length; i++) {
-		rowselect[i].style.visibility = \"visible\";
-	}
+	var metadata = document.getElementsByClassName(\"META\");
+	
+	if (cat === \"META\"){
+		
+		document.getElementById(\"ALL\").style.visibility = \"collapse\";
+
+		for (i = 0; i < metadata.length; i++) {
+			metadata[i].style.display = \"block\";
+		}
+
+	}else{
+		
+		for (i = 0; i < metadata.length; i++) {
+			metadata[i].style.display = \"none\";
+		}
+		
+		document.getElementById(\"ALL\").style.visibility = \"visible\";
+	
+		var rowunselected = document.getElementsByTagName(\"TR\");
+		for (i = 0; i < rowunselected.length; i++) {
+			rowunselected[i].style.visibility = \"collapse\";
+		}
+		var rowselect = document.getElementById('table').getElementsByClassName(cat);
+		for (i = 0; i < rowselect.length; i++) {
+			rowselect[i].style.visibility = \"visible\";
+		}
 	     
-	var rowhead = document.getElementById('table').getElementsByClassName('head');
-	for (i = 0; i < rowhead.length; i++) {
-		rowhead[i].style.visibility = \"visible\";
+		var rowhead = document.getElementById('table').getElementsByClassName('head');
+		for (i = 0; i < rowhead.length; i++) {
+			rowhead[i].style.visibility = \"visible\";
+		}
+
+
 	}
 }
 
@@ -2249,6 +2274,13 @@ filter = function  (cat) {
                 }
 
 
+
+/* Style METADATA */
+		.META {
+			display: none;
+			white-space: pre-line;
+		}
+
 /* Style the tab content */
         .tabcontent {
                 visibility: visible;
@@ -2305,8 +2337,13 @@ filter = function  (cat) {
 \n</head>
 \n\t<body>";
 
-#table and columns names
 
+#METADATA
+$vcfHeader =~ s/[<>]//g;
+my $metadata = "<div class=\"META\"><b>Arguments:</b><br>".$achabArg."<br><br><br><b>VCF Header:</b><br>".$vcfHeader."</div>";
+
+
+#table and columns names
 
 
 my $htmlStartTable = "";
@@ -2318,7 +2355,7 @@ $htmlStartTable .= "</tr>\n</thead>\n<tbody>\n";
 
 
 
-my $htmlALL= "<div id=\"ALL\" class=\"tabcontent\">\n\t<table id='table' class=\"display compact\" >\n\t\t<thead><tr class=\"head\">".$htmlStartTable;
+my $htmlALL= $metadata."<div id=\"ALL\" class=\"tabcontent\">\n\t<table id='table' class=\"display compact\" >\n\t\t<thead><tr class=\"head\">".$htmlStartTable;
  
 #my $htmlMETA="<div id=\"METADATA\" class=\"tabcontent\">\n\t<table id='tabMETADATA' class='display' >\n\t\t<thead><tr>".$htmlStartTable;
 
