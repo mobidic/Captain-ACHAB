@@ -583,9 +583,9 @@ if($candidates ne ""){
 
 		if($candidates_line =~ m/#/ ){
 			$candidates_line =~ s/#//g;
-			$CANDID_TAG = $candidates_line;
-			$tagsHash{$candidates_line}{'label'} = $candidates_line; 
-			$tagsHash{$candidates_line}{'count'} = 0; 
+			$CANDID_TAG = "CANDID_".$candidates_line;
+			$tagsHash{"CANDID_".$candidates_line}{'label'} = $candidates_line; 
+			$tagsHash{"CANDID_".$candidates_line}{'count'} = 0; 
 	
 			next;
 		}
@@ -1149,7 +1149,14 @@ while( <VCF> ){
 		#select only x% pop freq 
 		#Use pop freq threshold as an input parameter (default = 1%)
 		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} > $popFreqThr));  
-	
+
+		#convert gnomad freq "." to zero
+		if( $dicoInfo{'gnomAD_genome_ALL'} eq "."){
+			$dicoInfo{'gnomAD_genome_ALL'} = 0;
+		}
+		if( $dicoInfo{'gnomAD_exome_ALL'} eq "."){
+			$dicoInfo{'gnomAD_exome_ALL'} = 0;
+		}
 		
 		#FILTERING according to newHope option and filterList option
 		$filterBool = 0;
@@ -2151,8 +2158,8 @@ my $htmlStart = "<!DOCTYPE html>\n<html>
 \n<meta charset=\"utf-8\">
 \n<title>".$outPrefix." Achab catch</title>\n
 \n<script type=\"text/javascript\" language=\"javascript\" src='https://code.jquery.com/jquery-3.5.1.js'></script>
-\n<script type=\"text/javascript\" language=\"javascript\" src='https://cdn.datatables.net/fixedheader/3.1.7/js/dataTables.fixedHeader.min.js'></script>
 \n<script type=\"text/javascript\" language=\"javascript\" src='https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js'></script>
+\n<script type=\"text/javascript\" language=\"javascript\" src='https://cdn.datatables.net/fixedheader/3.1.7/js/dataTables.fixedHeader.min.js'></script>
 \n<script>
 
 var filter;
@@ -2163,13 +2170,13 @@ var filter;
 	\$('#table thead tr').clone(true).appendTo( '#table thead' );
             \$('#table thead tr:eq(1) th').each( function (i) {
              var title = \$(this).text();
-              \$(this).html( '<input type=\"text\" placeholder=\"Search\" />' );
-                                                 
+				\$(this).html( '<input type=\"text\" placeholder=\"Search\" />' );
+				\$(this).removeClass('rotate').off('click');                        
               \$( 'input', this ).on( 'keyup change', function () {
                   if ( table.column(i).search() !== this.value ) {
                         table
                        .column(i)
-                       .search( this.value,true,false )
+                       .search( this.value )
                        .draw();
                   }
             } );
@@ -2181,7 +2188,7 @@ var filter;
 	var table = \$('#table').DataTable(        {\"dom\": 'ift', \"order\": [] ,\"lengthMenu\":[ [ -1 ],[ \"All\" ]], \"fixedHeader\": true, \"orderCellsTop\": true, \"oLanguage\": {\"sInfo\": \"TOTAL: _TOTAL_ lines\" } } );
 
 
-filter = function  (cat) {
+filter = function  (evt, cat) {
 
 	var metadata = document.getElementsByClassName(\"META\");
 	
@@ -2215,11 +2222,24 @@ filter = function  (cat) {
 			rowhead[i].style.visibility = \"visible\";
 		}
 
+		var tablinks = document.getElementsByClassName(\"tablinks\");
+		for (i = 0; i < tablinks.length; i++) {
+			tablinks[i].className = tablinks[i].className.replace(\" active\", \"\");
+		}
+
 
 	}
+
+	evt.currentTarget.className += \" active\";
+	
+	window.scrollTo(0, 0);
+
 }
 
-
+/*double click on favorite row*/
+	\$('#table tbody').on('dblclick', 'tr', function () {
+		this.classList.toggle('favorite');
+	} );
 
 
 });
@@ -2261,17 +2281,57 @@ filter = function  (cat) {
                 background-color: #ddd;
                 }
 
+
+
 /* Create an active/current tablink class */
         .tab input.active {
                 background-color: #ccc;
                 }
-        .tab input:focus {
+/*        .tab input:focus {
                 background-color: #ccc;
-                }
+                }*/
+		#ALL tbody tr.favorite{
+			background-color: goldenrod;
+		}
+		#ALL tbody tr:hover{
+			background-color: teal;
+		}
+		#ALL tbody tr td div{
+			max-height: 45px;
+			text-overflow : ellipsis;
+			-o-text-overflow: ellipsis;
+			-ms-text-overflow: ellipsis;
+			-moz-binding: url('ellipsis.xml#ellipsis');
+			overflow: hidden;
+			white-space: nowrap;
+		}
+		#ALL tbody tr td div:hover{
+			overflow: visible;
+			white-space : pre-line;
+			overflow-wrap : break-word;
+		}
+		td {
+			text-align: center;
+		}
 
+/*rotate header*/
         thead input {
                 width: 100%;
                 }
+		th.rotate {
+			height: 150px;
+			white-space: nowrap;
+		}
+		th.rotate > div {
+			transform: 
+				translate(25px, 51px)
+				rotate(315deg);
+				width: 30px;
+		}
+		th.rotate > div > span {
+			/*border-bottom: 1px solid #ccc;*/
+			padding: 5px 10px;
+		}
 
 
 
@@ -2289,13 +2349,13 @@ filter = function  (cat) {
                 border-top: none;
                 }
 
-/* Style the tab content FULL */
+/* Style the tooltip div */
 
         .tooltip {
                 position: relative;
                 display: inline-block;
-                border-bottom: 1px dotted black;
-                max-width: 300px;
+                /*border-bottom: 1px dotted black;*/
+                max-width: 120px;
                 word-wrap: break-word;
                 }
         
@@ -2340,7 +2400,7 @@ filter = function  (cat) {
 
 #METADATA
 $vcfHeader =~ s/[<>]//g;
-my $metadata = "<div class=\"META\"><b>Arguments:</b><br>".$achabArg."<br><br><br><b>VCF Header:</b><br>".$vcfHeader."</div>";
+my $metadata = "<div class=\"META\"><b>Arguments:</b><br>".$achabArg."<br><br><br><b>VCF Header:</b><br>".$vcfHeader."</div>\n";
 
 
 #table and columns names
@@ -2349,7 +2409,7 @@ my $metadata = "<div class=\"META\"><b>Arguments:</b><br>".$achabArg."<br><br><b
 my $htmlStartTable = "";
 foreach my $col (@columnTitles){
 	#print HTML "\t<th style=\"word-wrap: break-word\"   >";
-	$htmlStartTable .= "\t<th >".$col."\t</th>\n";
+	$htmlStartTable .= "\t<th class=\"rotate\" ><div><span>".$col."\t</span></div></th>\n";
 }
 $htmlStartTable .= "</tr>\n</thead>\n<tbody>\n";
 
@@ -2362,14 +2422,14 @@ my $htmlALL= $metadata."<div id=\"ALL\" class=\"tabcontent\">\n\t<table id='tabl
 
 my $htmlEndTable = "</tbody>\n</table>\n</div>\n\n\n";
 
-my $htmlEnd = "<div class=\"tab\">\n<input type=\"button\" class=\"tablinks\" value=\"ALL_".$popFreqThr."\" onclick=\"filter('ALL')\">\n" ;
+my $htmlEnd = "<div class=\"tab\">\n<input type=\"button\" class=\"tablinks\" value=\"ALL_".$popFreqThr."\" onclick=\"filter(event, 'ALL')\">\n<input type=\"button\" class=\"tablinks\" value=\"*Favorites*\" onclick=\"filter(event, 'favorite')\">\n" ;
 
 #sort tag by number of variant
 
 my @tagSort = sort { $tagsHash{$b}{'count'}<=>  $tagsHash{$a}{'count'}  } keys %tagsHash ; 
 foreach my $tag ( @tagSort){
 		#print $tag."_".$tagsHash{$tag}{'label'}."\n";
-		$htmlEnd .= "<input type=\"button\" class=\"tablinks\" value=\"".$tagsHash{$tag}{'label'}." (".$tagsHash{$tag}{'count'}.")\" onclick=\"filter('".$tag."')\" >\n" ;
+		$htmlEnd .= "<input type=\"button\" class=\"tablinks\" value=\"".$tagsHash{$tag}{'label'}." (".$tagsHash{$tag}{'count'}.")\" onclick=\"filter(event, '".$tag."')\" >\n" ;
 }
 #foreach my $tag ( keys %tagsHash){
 #		print $tag."_".$tagsHash{$tag}{'label'}."\n";
@@ -2433,7 +2493,7 @@ for( my $fieldNbr = 0 ; $fieldNbr < scalar @{$hashFinalSortData{$rank}{$variant}
 		case ( 0 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentMPAscore'}."</span></div>"   }
 		case ( 2 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentPhenolyzer'}."</span></div> "   }
 		case ( 3 ) { $htmlALL .= "\t<td style=\"background-color:".$hashFinalSortData{$rank}{$variant}{'colorpLI'}."\"><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentpLI'}."</span></div>    "   }
-		case ( 4 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentPhenotype'}."</span></div> "   }
+		case ( 4 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."\n".$hashFinalSortData{$rank}{$variant}{'commentPhenotype'}."</span></div> "   }
 		case ( 5 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentGnomADgenome'}."</span></div> "   }
 		case ( 6 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentGnomADexome'}."</span></div> "   }
 		case ( 7 ) { $htmlALL .= "\t<td ><div class=\"tooltip\">".$hashFinalSortData{$rank}{$variant}{'finalArray'}[$fieldNbr]."<span class=\"tooltiptext tooltip-bottom\">".$hashFinalSortData{$rank}{$variant}{'commentClinvar'}."</span></div> "   }
@@ -2563,7 +2623,7 @@ $htmlALL .= "</tr>\n";
 ##############################################################
 ################ CANDIDATES #############
 
-		if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /CANDIDATE/){
+		if( $hashFinalSortData{$rank}{$variant}{'worksheet'} =~ /CANDID/){
 
 			writeThisSheet ($worksheetCandidats,
 							$worksheetLineCandidats,
