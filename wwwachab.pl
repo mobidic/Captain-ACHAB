@@ -263,7 +263,7 @@ while( <VCF> ){
 		#DEBUG      print STDERR "info : ". $1 . "\tdescription: ". $2."\n";
 			
 
-			    next;
+		next;
       
       }else {print STDERR "pattern not found in this line: ".$current_line ."\n";next} 
 			
@@ -1206,6 +1206,11 @@ while( <VCF> ){
 				#print "finalSort\t".$finalSortData[$dicoColumnNbr{$keys}]."\n";
 				#print "dicoInfo\t".$dicoInfo{$keys}."\n";
 				#print "keys\t".$keys."\n";
+			}else{
+				#check if custom INFO exists in VCF
+				if($dicoColumnNbr{$keys} > (16+$cmpt)){
+					$finalSortData[$dicoColumnNbr{$keys}] = "INFO not found";
+				}
 			}
 		}	
 
@@ -1521,14 +1526,20 @@ while( <VCF> ){
 		
 
 		#CHECK IF variant is in customVCF
-		if($customVCF_File ne "" && defined $customVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}){
-			$finalSortData[$dicoColumnNbr{'customVCFannotation'}] = $customVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]};
+		if($customVCF_File ne ""){
+		
+			if( defined $customVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}){
+				$finalSortData[$dicoColumnNbr{'customVCFannotation'}] = $customVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]};
 
-			#Penalize variant if "found=*" is greater than filterCustomVCF option
-			if($filterCustomVCF ne "" && $finalSortData[$dicoColumnNbr{'customVCFannotation'}] =~ m/$filterCustomVCFRegex(\d*)/){
-				if( $1 >= $filterCustomVCF){ 
-					$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
+				#Penalize variant if "found=*" is greater than filterCustomVCF option
+				if($filterCustomVCF ne "" && $finalSortData[$dicoColumnNbr{'customVCFannotation'}] =~ m/$filterCustomVCFRegex(\d*)/){
+					if( $1 >= $filterCustomVCF){ 
+						$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
+					}
+					
 				}
+			}else{
+				$finalSortData[$dicoColumnNbr{'customVCFannotation'}] = ".";
 			}
 		}
 
@@ -2737,20 +2748,21 @@ if(defined $trio){
 	$worksheetHTZcompo->autofilter('A1:Z'.$worksheetLineHTZcompo); # Add autofilter
 	$worksheetSNPdadVsCNVmum->autofilter('A1:Z'.$worksheetLineSNPdadVsCNVmum); # Add autofilter
  
+ 	if ( $dadVariant > 0 && $mumVariant > 0 && $caseDadVariant > 0 && $caseMumVariant > 0){
 
-	#check inheritance consistency
-	if ( log($caseDadVariant/$dadVariant) / log(10) < 0.1 ){
-		$worksheetMETA->write( 1, 0, "Dad status : OK (log10(".$caseDadVariant."/".$dadVariant.") < 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
-	}else{
-		$worksheetMETA->write( 1, 0, "Dad status : BAD (log10(".$caseDadVariant."/".$dadVariant.") > 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+		#check inheritance consistency
+		if ( log($caseDadVariant/$dadVariant) / log(10) < 0.1 ){
+			$worksheetMETA->write( 1, 0, "Dad status : OK (log10(".$caseDadVariant."/".$dadVariant.") < 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+		}else{
+			$worksheetMETA->write( 1, 0, "Dad status : BAD (log10(".$caseDadVariant."/".$dadVariant.") > 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+		}
+
+		if ( log($caseMumVariant/$mumVariant) / log(10) < 0.1 ){
+			$worksheetMETA->write( 2, 0, "Mum status : OK (log10(".$caseMumVariant."/".$mumVariant.") < 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+		}else{
+			$worksheetMETA->write( 2, 0, "Mum status : BAD (log10(".$caseMumVariant."/".$mumVariant.") > 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+		}
 	}
-
-	if ( log($caseMumVariant/$mumVariant) / log(10) < 0.1 ){
-		$worksheetMETA->write( 2, 0, "Mum status : OK (log10(".$caseMumVariant."/".$mumVariant.") < 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
-	}else{
-		$worksheetMETA->write( 2, 0, "Mum status : BAD (log10(".$caseMumVariant."/".$mumVariant.") > 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
-	}
-
 
 } 
 
