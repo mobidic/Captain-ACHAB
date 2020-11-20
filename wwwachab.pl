@@ -1937,7 +1937,7 @@ while( <VCF> ){
 					
                 	my @pathoTAG = split( ' ', $candidateGene{$geneName} );    
 					for(my $i=0; $i < scalar @pathoTAG; $i ++){
-						 $tagsHash{@pathoTAG[$i]}{'count'} ++;
+						 $tagsHash{$pathoTAG[$i]}{'count'} ++;
 					}
 				}
 				
@@ -2450,11 +2450,13 @@ $htmlEnd .= "</div>" ;
 
 $htmlEnd .= "\n</body>\n</html>";
 
+my $newHopePrefix = "";
+if(defined $newHope){
+	$newHopePrefix = "_newHope_";
+}
 
 
-
-
-open(HTML, '>', $outDir."/".$outPrefix."achab.html") or die $!;
+open(HTML, '>', $outDir."/".$outPrefix.$newHopePrefix."achab.html") or die $!;
 
 
 #########################################################################
