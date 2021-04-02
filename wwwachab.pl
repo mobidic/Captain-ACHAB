@@ -1208,10 +1208,9 @@ while( <VCF> ){
 				#print "keys\t".$keys."\n";
 			}else{
 				#check if custom INFO exists in VCF
-        my $newHopeCol = 0;
-        if (defined $newHope) {$newHopeCol = 1}
-        if($dicoColumnNbr{$keys} > (16+$newHopeCol+$cmpt+scalar @custInfList)){
-				#if($dicoColumnNbr{$keys} > (16+$cmpt)){
+				if (defined $newHope) {
+					#nothing to do
+				}else{
 					$finalSortData[$dicoColumnNbr{$keys}] = "INFO not found";
 				}
 			}
