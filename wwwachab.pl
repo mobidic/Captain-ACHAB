@@ -1208,11 +1208,11 @@ while( <VCF> ){
 				#print "keys\t".$keys."\n";
 			}else{
 				#check if custom INFO exists in VCF
-				if (defined $newHope) {
+				#if (defined $newHope) {
 					#nothing to do
-				}else{
-					$finalSortData[$dicoColumnNbr{$keys}] = "INFO not found";
-				}
+				#}else{
+				#	$finalSortData[$dicoColumnNbr{$keys}] = "INFO not found";
+				#}
 			}
 		}
 
