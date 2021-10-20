@@ -187,7 +187,7 @@ Command line to use Captain ACHAB
                         --favouriteGeneRef <File with transcript references to extract in a new column (1 transcript by line) >
                         --filterCustomVCF <integer value, penalizes variant if its frequency in the customVCF is greater than [value] (default key of info field : found=[value])  >
                         --filterCustomVCFRegex <string pattern used as regex to search for a specific field to filter customVCF (default key of info field: 'found=')  >
-                        --pooledSamples <comma separated list of samples that are pooled (it will convert 0/0 genotype into 0/1 if at least 1 read support ALT base, e.g. parents pool in trio context)  >
+                        --pooledSamples <comma separated list of samples that are pooled (it will convert 0/0 genotype into 0/1 if at least 1 read support ALT base and it will flag cell in yellow, e.g. parents pool in trio context)  >
                         --sampleSubset <comma separated list of samples only processed by Achab to the output>
                         --addCaseDepth (case Depth will be added in a new column) 
                         --intersectVCF <VCF format File for comparison (if variant matches then 'yes' will be added in a new 'intersectVCF' column) >
