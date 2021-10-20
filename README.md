@@ -166,17 +166,17 @@ Command line to use Captain ACHAB
 
 ```
 #USAGE : perl achab.pl 
-                        --vcf <vcf_file> 
+                        --vcf <vcf_file> (mandatory)
                         --outDir <output directory (default = current dir)>
                         --outPrefix <output file prelifx (default = "")>
-                        --candidates <file with gene symbol of interest>  
-                        --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   
-                        --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01> 
-                        --trio (requires case dad and mum option to be filled) 
+                        --candidates <file with end-of-line separated gene symbols of interest (it will create more tabs, if "#myPathology" is present in the file, a myPathology tab will be created)>  
+                        --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores (it will contribute to the final ranking and top50 genes will be added in METADATA tab)>   
+                        --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01 (based on gnomad_genome_ALL)> 
+                        --trio (requires case dad and mum option to be filled, but if case dad and mum option are filled, trio mode is automatically activated ) 
                           --case <index_sample_name> (required with trio option)
                           --dad <father_sample_name> (required with trio option)
                           --mum <mother_sample_name>  (required with trio option)
-                        --customInfoList  <comma separated list of vcf-info name (will be added in a new column)> 
+                        --customInfoList  <comma separated list of vcf annotation INFO name (each of them will be added in a new column)> 
                         --filterList <comma separated list of VCF FILTER to output (default= 'PASS', included automatically to the list)>
                         --cnvGeneList <file with gene symbol + annotation (1 tab-separated), involved by parallel CNV calling>
                         --customVCF <VCF format File with custom annotation (if variant matches then INFO field annotations will be added in new column)>
@@ -186,7 +186,13 @@ Command line to use Captain ACHAB
                         --affected <comma separated list of samples affected by phenotype (assuming they support the same genotype) >
                         --favouriteGeneRef <File with transcript references to extract in a new column (1 transcript by line) >
                         --filterCustomVCF <integer value, penalizes variant if its frequency in the customVCF is greater than [value] (default key of info field : found=[value])  >
-                        --filterCustomVCFRegex <string pattern used as regex to search for a specific field to filter customVCF (default key of info field: 'found=')  >";
+                        --filterCustomVCFRegex <string pattern used as regex to search for a specific field to filter customVCF (default key of info field: 'found=')  >
+                        --pooledSamples <comma separated list of samples that are pooled (it will convert 0/0 genotype into 0/1 if at least 1 read support ALT base, e.g. parents pool in trio context)  >
+                        --sampleSubset <comma separated list of samples only processed by Achab to the output>
+                        --addCaseDepth (case Depth will be added in a new column) 
+                        --intersectVCF <VCF format File for comparison (if variant matches then 'yes' will be added in a new 'intersectVCF' column) >
+                        --poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in 4th column -requires OMIM genemap2 File- and create an excel file )>
+                        --genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )> 
                         --help (print this command usage)
 
 
