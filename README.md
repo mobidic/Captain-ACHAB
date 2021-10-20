@@ -34,15 +34,20 @@ To be notice : More informations are available when mouse is hovering over the c
 **2. Filter variant depending on general population frequency :**  
 
 Default frequency threshold is 0.01 in gnomAD_genome (1%).
+
 ![gnomAD](img/gnomad-achab.png)
 
 **3. Analyse variants from top to bottom via the MPA-achab ranking :** 
 
-According to MPA >= v1.1.0  Ranking : from 1 to 9 and score.  
+According to MPA >= v1.1.0  Ranking : from 1 to 9 and score.
+
 ![mpa](img/mpa-achab.PNG)
 
 
-- 1   clinvar_pathogenicity : Pathogenic variants reported on ClinVar (score : 10) ![ClinVar](img/clinvar-achab.png)
+- 1   clinvar_pathogenicity : Pathogenic variants reported on ClinVar (score : 10) 
+ 
+![ClinVar](img/clinvar-achab.png)
+
 - 2   stop or frameshift_impact : Premature Truncation Codon : nonsense or frameshift (score : 10)
 - 3   splicing_impact (ADA, RF) : Affecting splice variants predictions ranked by algorithm performance robustness and strength (score : 10)
 - 4   splicing_impact (spliceAI high) : Affecting splice variants predictions ranked by algorithm performance robustness and strength (score : 10)
