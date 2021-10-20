@@ -5,8 +5,8 @@
 ## Overview
 
 Captain ACHAB is a simple and useful interface to analysis of NGS data for molecular diagnosis.
-This is the end of Excel table with so many columns ! All necessary information is available in one look.
-Captain ACHAB file are readable with Excel (.xlsx) ( or soon with the open-source [CuteVariant](https://github.com/labsquare/CuteVariant) (.JSON)).     
+No more endless tables with so many columns ! All necessary information is available in one look.
+Captain ACHAB files are readable with Excel (.xlsx) or web browser (.html) ( or soon with the open-source [CuteVariant](https://github.com/labsquare/CuteVariant) (.JSON)).     
    
 ![achab](img/achab1.png)
 
@@ -39,7 +39,7 @@ Default frequency threshold is 0.01 in gnomAD_genome (1%).
 
 **3. Analyse variants from top to bottom via the MPA-achab ranking :** 
 
-According to MPA >= v1.1.0  Ranking : from 1 to 9 and score.
+According to MPA >= v1.1.0  Ranking : from 1 to 10. Priorization is refined by Achab processing (based on phenotype, genotype, allele balancy, Haploinsufficiency and custom filtering) .
 
 ![mpa](img/mpa-achab.PNG)
 
