@@ -19,34 +19,35 @@ use Data::Dumper;
 
 #parameters
 my $man = "USAGE : \nperl achab.pl 
-\n--vcf <vcf_file> 
+\n--vcf <vcf_file> (mandatory)
 \n--outDir <output directory (default = current dir)> 
 \n--outPrefix <output file prelifx (default = \"\")> 
-\n--candidates <file with gene symbol of interest>  
-\n--phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores>   
-\n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01> 
-\n--trio (requires case dad and mum option to be filled) 
-\n\t--case <index_sample_name> 
-\n\t--dad <father_sample_name> 
-\n\t--mum <mother_sample_name>  
-\n--customInfoList  <comma separated list of vcf-info names (will be added in a new column)>  
+\n--candidates <file with end-of-line separated gene symbols of interest (it will create more tabs, if '#myPathology' is present in the file, a 'myPathology' tab will be created) >  
+\n--phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores (it will contribute to the final ranking and top50 genes will be added in METADATA tab) >   
+\n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01 (based on gnomAD_genome_ALL) > 
+\n--trio (requires case dad and mum option to be filled, but if case dad and mum option are filled, trio mode is automatically activated) 
+\n\t--case <index_sample_name> (required with trio option)
+\n\t--dad <father_sample_name> (required with trio option)
+\n\t--mum <mother_sample_name> (required with trio option)
+\n--customInfoList  <comma separated list of vcf annotation INFO names (each of them will be added in a new column)>  
 \n--filterList <comma separated list of VCF FILTER to output (default='PASS', included )>   
 \n--cnvGeneList <File with gene symbol + annotation (1 tab separated), involved by parallel CNV calling >
 \n--customVCF <VCF format File with custom annotation (if variant matches then INFO field annotations will be added in new column)>
 \n--mozaicRate <mozaic rate value from 0 to 1, it will color 0/1 genotype according to this value  (default=0.2 as 20%)>
 \n--mozaicDP <ALT variant Depth, number of read supporting ALT, it will give darker color to the 0/1 genotype  (default=5)>
-\n--newHope (only popFreqThr filter is applied (no more FILTER or MPA_ranking))>
+\n--newHope (only popFreqThr filter is applied (no more FILTER nor MPA_ranking))>
 \n--affected <comma separated list of samples affected by phenotype (assuming they support the same genotype >
 \n--favouriteGeneRef <File with transcript references to extract in a new column (1 transcript by line) >
 \n--filterCustomVCF <integer value, penalizes variant if its frequency in the customVCF is greater than [value] (default key of info field : found=[value])  >
 \n--filterCustomVCFRegex <string pattern used as regex to search for a specific field to filter customVCF (default key of info field : 'found=')  >
 \n--pooledSamples <comma separated list of samples that are pooled (e.g. parents pool in trio context)  >
-\n--IDSNP <comma separated list of rs ID for identity monitoring (e.g. rs4889990,rs2075559)  >
-\n--sampleSubset <comma separated list of samples only processed by Achab in the output>
+\n--IDSNP <comma separated list of rs ID for identity monitoring (it will convert 0/0 genotype into 0/1 if at least 1 read support ALT base and it will flag cell in yellow, e.g. rs4889990,rs2075559)  >
+\n--sampleSubset <comma separated list of samples only processed by Achab to the output >
 \n--addCaseDepth (case Depth will be added in a new column) 
 \n--intersectVCF <VCF format File for comparison (if variant matches then 'yes' will be added in new 'intersectVCF' column) > 
-\n--poorCoverageFile <poor Coverage File (it will annotate OMIM genes -requires OMIM genemap2 File- and create an excel file )> 
-\n--genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )> \n";
+\n--poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in the 4th column -requires OMIM genemap2 File- and create an excel file )> 
+\n--genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )>
+\n--skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 ) \n";
 
 
 #################################### VARIABLES INIT ########################
@@ -157,8 +158,9 @@ my %hashIDSNP;
 my $sampleSubset = "";
 my @sampleSubsetArray;
 
-#add case Depth in a new column
+#case options
 my $addCaseDepth; 
+my $skipCaseWT; 
 
 #Poor coverage File and omim genemap2 file
 my $genemap2_File = "";
@@ -215,6 +217,7 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"intersectVCF:s"	=> \$intersectVCF_File,
 		"poorCoverageFile:s"	=> \$poorCoverage_File,
 		"genemap2File:s"	=> \$genemap2_File,
+		"skipCaseWT"		=> \$skipCaseWT,
 		"help|h"			=> \$help);
 				
 				
@@ -1740,7 +1743,7 @@ while( <VCF> ){
 				$finalSortData[$dicoColumnNbr{'intersectVCFannotation'}] = "yes";
 
 			}else{
-				$finalSortData[$dicoColumnNbr{'customVCFannotation'}] = "no";
+				$finalSortData[$dicoColumnNbr{'intersectVCFannotation'}] = "no";
 			}
 		}
 
@@ -1880,13 +1883,15 @@ while( <VCF> ){
 				# POOL samples treatment, change genotype 0/0 to 0/1 if ALT depth > 1 , give yellow color to the changed sample genotype
 				if (defined $hashPooledSamples{substr($dicoSamples{$finalcol}{'columnName'},9,length($dicoSamples{$finalcol}{'columnName'})-9) }){
 					
-					if ($genotype[$formatIndex{'GT'}] eq "0/0" && $adalt > 1){
+					if ($genotype[$formatIndex{'GT'}] eq "0/0" && $adalt >= 1){
 
 						$mozaicSamples  .= $dicoSamples{$finalcol}{'columnName'}.";";
 						$mozaicSamples  .= 'yellow'.";";
 						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'yellow';
 						$genotype[$formatIndex{'GT'}] = "0/1";
 						$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]." (recomputed pool)\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
+						#penalize if recomputed pool
+						$finalSortData[$dicoColumnNbr{'MPA_ranking'}] 	+= 0.1;
 					}else{
 						$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
 						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'inherit';
@@ -1952,6 +1957,11 @@ while( <VCF> ){
 
 		#Penalize (or do next) if index case is 0/0 or parents are 1/1 and not affected. We should treat further all affected genotypes like this (!= 0/0)
 		if (defined $trio){ 
+
+			if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
+				next;
+			}
+
 			switch ($familyGenotype){
 				#Check if case/dad and case/mum  inheritance are  consistent
 				case /^_0\/0_0\/1_0\/0_/ {$dadVariant ++ ;}
@@ -3091,16 +3101,10 @@ close(HTML);
 #
 #
 
-my $workbookCoverage;
 
-if ($outDir eq "." || -d $outDir) {
-		$workbookCoverage = Excel::Writer::XLSX->new( $outDir."/".$outPrefix."poorCoverage.xlsx" );
-}else {
- 	die("No directory $outDir");
-}
 
 # Add all worksheets
-
+my $workbookCoverage;
 my $worksheetCoverage;
 my $worksheetCoverageLine = 0;
 
@@ -3108,6 +3112,12 @@ my $worksheetCoverageLine = 0;
 #poor coverage and genemap2 treatment 
 if ($poorCoverage_File ne "" &&  $genemap2_File ne ""  ){
 	
+
+	if ($outDir eq "." || -d $outDir) {
+		$workbookCoverage = Excel::Writer::XLSX->new( $outDir."/".$outPrefix."poorCoverage.xlsx" );
+	}else {
+ 		die("No directory $outDir");
+	}
 
 	$worksheetCoverage = $workbookCoverage->add_worksheet('poor cov');
 	$worksheetCoverage->freeze_panes( 1, 0 );    # Freeze the first row
@@ -3127,16 +3137,20 @@ if ($poorCoverage_File ne "" &&  $genemap2_File ne ""  ){
 		chomp $genemap2_Line;
 		@genemap2_List = split( /\t/, $genemap2_Line );	
 
-		if ($genemap2_List[11] ne ""){
+		if (defined $genemap2_List[8]  && $genemap2_List[8] ne ""){
 			if (defined $genemap2_variant{$genemap2_List[8]}){
-				$genemap2_variant{$genemap2_List[8]} .= ";".$genemap2_List[11];
+				if (! defined $genemap2_List[12]){
+					$genemap2_List[12] = "";
+				}
+
+				$genemap2_variant{$genemap2_List[8]} .= ";".$genemap2_List[12];
 
 			}else{	
-				$genemap2_variant{$genemap2_List[8]} = $genemap2_List[11];
+				$genemap2_variant{$genemap2_List[8]} = $genemap2_List[12];
 			}
 		}
-		close(GENEMAP2);
 	}
+	close(GENEMAP2);
 
 
 	open(POORCOV , "<$poorCoverage_File") or die("Cannot open poorCoverage file ".$poorCoverage_File) ;
