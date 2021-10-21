@@ -197,7 +197,8 @@ Command line to use Captain ACHAB
                         --addCaseDepth (case Depth will be added in a new column) 
                         --intersectVCF <VCF format File for comparison (if variant matches then 'yes' will be added in a new 'intersectVCF' column) >
                         --poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in 4th column -requires OMIM genemap2 File- and create an excel file )>
-                        --genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )> 
+                        --genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )>
+                        --skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 )
                         --help (print this command usage)
 
 
