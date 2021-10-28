@@ -177,7 +177,8 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 
 #check mandatory arguments
 if(defined $version){
-	die("$versionOut\n");
+	print("$versionOut\n");
+  exit(0);
 }
 
 if(defined $help || $incfile eq ""){
