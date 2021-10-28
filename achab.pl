@@ -181,7 +181,12 @@ if(defined $version){
   exit(0);
 }
 
-if(defined $help || $incfile eq ""){
+if(defined $help){
+	print("$man\n");
+  exit(0);
+}
+
+if($incfile eq ""){
 	die("$man\n");
 }
 
