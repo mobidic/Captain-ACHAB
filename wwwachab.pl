@@ -50,7 +50,7 @@ my $man = "USAGE : \nperl achab.pl
 \n--skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 ) >
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.2"
+my $versionOut = "achab version www:1.0.2";
 
 #################################### VARIABLES INIT ########################
 
