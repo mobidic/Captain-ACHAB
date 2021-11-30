@@ -89,7 +89,7 @@ awk -F "\t" 'BEGIN{SAMPLES="";found=0;samplesFound="";HMZ=0;HTZ=0;TOTALSAMPLES=0
 		}
 } 
 
-END{print CHROMHEADER; for (var in VARTAB){print VARTAB[var]["startHalf"]"\t"VARTAB[var]["INFO"] } }' $* > $(basename $1) 
+END{print CHROMHEADER; for (var in VARTAB){print VARTAB[var]["startHalf"]"\t"VARTAB[var]["INFO"] } }' $* > $1
 
 
 exit 0
