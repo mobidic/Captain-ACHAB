@@ -3006,17 +3006,17 @@ $htmlALL .= "</tr>\n";
 
 #############add autofilters within the sheets
 
-$worksheet->autofilter('A1:Z'.$worksheetLine); # Add autofilter until the end
-$worksheetOMIMDOM->autofilter('A1:Z'.$worksheetLineOMIMDOM); # Add autofilter until the end
-$worksheetOMIMREC->autofilter('A1:Z'.$worksheetLineOMIMREC); # Add autofilter until the end
+$worksheet->autofilter('A1:AZ'.$worksheetLine); # Add autofilter until the end
+$worksheetOMIMDOM->autofilter('A1:AZ'.$worksheetLineOMIMDOM); # Add autofilter until the end
+$worksheetOMIMREC->autofilter('A1:AZ'.$worksheetLineOMIMREC); # Add autofilter until the end
 
 
 my $metadataLine = 1;
 
 if(defined $trio){
 
-	$worksheetHTZcompo->autofilter('A1:Z'.$worksheetLineHTZcompo); # Add autofilter
-	$worksheetSNPdadVsCNVmum->autofilter('A1:Z'.$worksheetLineSNPdadVsCNVmum); # Add autofilter
+	$worksheetHTZcompo->autofilter('A1:AZ'.$worksheetLineHTZcompo); # Add autofilter
+	$worksheetSNPdadVsCNVmum->autofilter('A1:AZ'.$worksheetLineSNPdadVsCNVmum); # Add autofilter
 
 
 	#check inheritance consistency and add to METADATA
@@ -3076,16 +3076,16 @@ $worksheetMETA->write( $metadataLine , 0, $vcfHeader );
 $metadataLine ++;
 
 
-$worksheetSNPmumVsCNVdad->autofilter('A1:Z'.$worksheetLineSNPmumVsCNVdad); # Add autofilter
-$worksheetAR->autofilter('A1:Z'.$worksheetLineAR); # Add autofilter
-$worksheetDENOVO->autofilter('A1:Z'.$worksheetLineDENOVO); # Add autofilter
+$worksheetSNPmumVsCNVdad->autofilter('A1:AZ'.$worksheetLineSNPmumVsCNVdad); # Add autofilter
+$worksheetAR->autofilter('A1:AZ'.$worksheetLineAR); # Add autofilter
+$worksheetDENOVO->autofilter('A1:AZ'.$worksheetLineDENOVO); # Add autofilter
 
 
 
 if($candidates ne ""){
 	foreach my $patho (keys %candidWorksheetHash){
 		my $toto = $candidWorksheetHash{$patho}{'workbook'};
-		$candidWorksheetHash{$patho}{'workbook'}->autofilter('A1:Z'.$candidWorksheetHash{$patho}{'line'});
+		$candidWorksheetHash{$patho}{'workbook'}->autofilter('A1:AZ'.$candidWorksheetHash{$patho}{'line'});
 	 }
  }
 
@@ -3203,7 +3203,7 @@ if ($poorCoverage_File ne "" &&  $genemap2_File ne ""  ){
 	close(POORCOV);
 
 	#############add autofilters within the sheets
-	$worksheetCoverage->autofilter('A1:Z'.$worksheetCoverageLine); # Add autofilter until the end
+	$worksheetCoverage->autofilter('A1:AZ'.$worksheetCoverageLine); # Add autofilter until the end
 
 }
 
