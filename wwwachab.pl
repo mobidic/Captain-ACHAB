@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-##### achab.pl ####
+##### wwwachab.pl ####
 
-# Author : Thomas Guignard 2021
+# Author : Thomas Guignard 2022
 
 # Description :
 # Create an User friendly Excel file from an MPA annotated VCF file.
@@ -15,10 +15,10 @@ use Excel::Writer::XLSX;
 use Switch;
 #use Pod::Usage;
 #use List::Util qw(first);
-use Data::Dumper;
+#use Data::Dumper;
 
 #parameters
-my $man = "USAGE : \nperl achab.pl
+my $man = "USAGE : \nperl wwwachab.pl
 \n--vcf <vcf_file> (mandatory)
 \n--outDir <output directory (default = current dir)>
 \n--outPrefix <output file prelifx (default = \"\")>
@@ -40,17 +40,20 @@ my $man = "USAGE : \nperl achab.pl
 \n--favouriteGeneRef <File with transcript references to extract in a new column (1 transcript by line) >
 \n--filterCustomVCF <integer value, penalizes variant if its frequency in the customVCF is greater than [value] (default key of info field : found=[value])  >
 \n--filterCustomVCFRegex <string pattern used as regex to search for a specific field to filter customVCF (default key of info field : 'found=')  >
+\n--addCustomVCFRegex (customVCF field matched with customVCFRegex will be added in a new column - it requires customVCF option -  default regex is 'found=') 
 \n--pooledSamples <comma separated list of samples that are pooled (e.g. parents pool in trio context)  >
 \n--IDSNP <comma separated list of rs ID for identity monitoring (it will convert 0/0 genotype into 0/1 if at least 1 read support ALT base and it will flag cell in yellow, e.g. rs4889990,rs2075559)  >
 \n--sampleSubset <comma separated list of samples only processed by Achab to the output >
 \n--addCaseDepth (case Depth will be added in a new column)
+\n--addCaseAB (case Allelic Balance will be added in a new column)
 \n--intersectVCF <VCF format File for comparison (if variant matches then 'yes' will be added in new 'intersectVCF' column) >
 \n--poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in the 4th column -requires OMIM genemap2 File- and create an excel file )>
 \n--genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file ) >
-\n--skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 ) >
+\n--skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 ) 
+\n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.3";
+my $versionOut = "achab version www:1.0.4";
 
 #################################### VARIABLES INIT ########################
 
@@ -107,6 +110,7 @@ my %customVCF_variant;
 #threshold to filter out bias related frequent variants
 my $filterCustomVCF = "";
 my $filterCustomVCFRegex = "";
+my $addCustomVCFRegex;
 
 my $intersectVCF_File = "";
 my $intersectVCF_Line;
@@ -163,6 +167,7 @@ my @sampleSubsetArray;
 
 #case options
 my $addCaseDepth;
+my $addCaseAB;
 my $skipCaseWT;
 
 #Poor coverage File and omim genemap2 file
@@ -176,6 +181,8 @@ my $poorCoverage_Line;
 my @poorCoverage_List;
 my %poorCoverage_variant;
 
+
+my $hideACMG;
 
 # METADATA
 
@@ -213,14 +220,17 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"affected:s"		=> \$affected,
 		"filterCustomVCF:s"			=> \$filterCustomVCF,
 		"filterCustomVCFRegex:s"	=>	\$filterCustomVCFRegex,
+		"addCustomVCFRegex"	=>	\$addCustomVCFRegex,
 		"pooledSamples:s"	=>	\$pooledSamples,
 		"IDSNP:s"	=>	\$IDSNP,
 		"sampleSubset:s"		=> \$sampleSubset,
 		"addCaseDepth"		=> \$addCaseDepth,
+		"addCaseAB"		=> \$addCaseAB,
 		"intersectVCF:s"	=> \$intersectVCF_File,
 		"poorCoverageFile:s"	=> \$poorCoverage_File,
 		"genemap2File:s"	=> \$genemap2_File,
 		"skipCaseWT"		=> \$skipCaseWT,
+		"hideACMG"		=> \$hideACMG,
     "help|h"			=> \$help,
     "version|v"   => \$version);
 
@@ -690,7 +700,6 @@ if ($filterCustomVCFRegex eq ""){
 	$filterCustomVCFRegex = "found=";
 }else{chomp $filterCustomVCFRegex ;}
 
-
 # intersect VCF treatment
 if($intersectVCF_File ne ""){
 
@@ -969,6 +978,11 @@ if($case ne "" && defined $addCaseDepth){
 	$lastColumn++;
 }
 
+# add case Allelic balance
+if($case ne "" && defined $addCaseAB){
+	$dicoColumnNbr{'Case AB'} = $lastColumn ;
+	$lastColumn++;
+}
 
 if($customInfoList ne ""){
 	chomp $customInfoList;
@@ -990,6 +1004,8 @@ if($favouriteGeneRef ne ""){
 
 #custom VCF in last position
 if($customVCF_File ne ""){
+	$dicoColumnNbr{$filterCustomVCFRegex.'_customVCF'} = $lastColumn ;
+	$lastColumn++;
 	$dicoColumnNbr{'customVCFannotation'} = $lastColumn ;
 	$lastColumn++;
 }
@@ -1151,7 +1167,11 @@ $commentHash{'11'}='commentGenotype';
 
 #########FILLING COLUMN TITLES FOR SHEETS
 $worksheet->write_row( 0, 0, \@columnTitles );
-$worksheetACMG->write_row( 0, 0, \@columnTitles );
+if (defined $hideACMG){
+	$worksheetACMG->write( 0, 0, "ACMG lines are hidden.");
+}else{
+	$worksheetACMG->write_row( 0, 0, \@columnTitles );
+}
 $worksheetMETA->write( 0, 0, "METADATA" );
 $worksheetOMIMDOM->write_row( 0, 0, \@columnTitles );
 $worksheetOMIMREC->write_row( 0, 0, \@columnTitles );
@@ -1159,7 +1179,7 @@ $worksheetOMIMREC->write_row( 0, 0, \@columnTitles );
 
 #write comment for pLI => NOW LOEUF is used
 $worksheet->write_comment( 0, $dicoColumnNbr{'Gene.'.$refGene}, $pLI_Comment,  x_scale => 3 );
-$worksheetACMG->write_comment( 0, $dicoColumnNbr{'Gene.'.$refGene}, $pLI_Comment,  x_scale => 3  );
+unless(defined $hideACMG){ $worksheetACMG->write_comment( 0, $dicoColumnNbr{'Gene.'.$refGene}, $pLI_Comment,  x_scale => 3  )};
 
 
 #FILLING COLUMN TITLES FOR TRIO SHEETS OR AFFECTED OR STRANGERS
@@ -1738,14 +1758,27 @@ while( <VCF> ){
 			if( defined $customVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}){
 				$finalSortData[$dicoColumnNbr{'customVCFannotation'}] = $customVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]};
 
-				#Penalize variant if "found=*" is greater than filterCustomVCF option
-				if($filterCustomVCF ne "" && $finalSortData[$dicoColumnNbr{'customVCFannotation'}] =~ m/$filterCustomVCFRegex(\d*)/){
-					if( $1 >= $filterCustomVCF){
+				#if($filterCustomVCF ne "" && $finalSortData[$dicoColumnNbr{'customVCFannotation'}] =~ m/$filterCustomVCFRegex(\d*)/){
+				if($finalSortData[$dicoColumnNbr{'customVCFannotation'}] =~ m/$filterCustomVCFRegex(\d*)/){
+				
+					#Penalize variant if "found=*" is greater than filterCustomVCF option
+					if($filterCustomVCF ne "" && $1 >= $filterCustomVCF){
 						$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
 					}
+						
+					#add value in a new column
+					if (defined $addCustomVCFRegex ){
+						$finalSortData[$dicoColumnNbr{$filterCustomVCFRegex.'_customVCF'}] = $1;
+					}
 
-				}
+				}else{
+					#add absent value in a new column :  -1 is regex pattern not found
+					if (defined $addCustomVCFRegex ){
+						$finalSortData[$dicoColumnNbr{$filterCustomVCFRegex.'_customVCF'}] = "-1";
+					}
+				}	
 			}else{
+				$finalSortData[$dicoColumnNbr{$filterCustomVCFRegex.'_customVCF'}] = "0";
 				$finalSortData[$dicoColumnNbr{'customVCFannotation'}] = ".";
 			}
 		}
@@ -1954,6 +1987,11 @@ while( <VCF> ){
 
 				}
 
+				# add Allelic balance (AB) of the Case in supplementary column
+				if (defined $addCaseAB && $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
+					$finalSortData[$dicoColumnNbr{'Case AB'}] = $AB;
+
+				}
 
 				$finalSortData[$dicoColumnNbr{$dicoSamples{$finalcol}{'columnName'}}] = $genotype[$formatIndex{'GT'}];
 				#concatenate sample genotype to build family genotype
@@ -2181,8 +2219,14 @@ while( <VCF> ){
 			#ACMG
 			#if(defined $ACMGgene{$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]} )
 			if(defined $ACMGgene{$geneName} ){
-				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= " ACMG";
-				$tagsHash{'ACMG'}{'count'} ++;
+
+				if (defined $hideACMG){
+					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} = "ACMG warning\n\n";	
+                    $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  '#FFFFFF' ;
+				}else{
+					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= " ACMG";
+					$tagsHash{'ACMG'}{'count'} ++;
+				}
 			}
 
 			#CANDIDATES
@@ -2227,7 +2271,7 @@ while( <VCF> ){
 
 #            oe_lof_upper_rank   oe_lof_upper_bin    oe_lof  oe_lof_lower    oe_lof_upper    oe_mis  oe_mis_lower    oe_mis_upper
 
-			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} =  "LOEUF = ".$dicoInfo{'oe_lof_upper.'.$refGene}."\nLOEUF_decile = ".$dicoInfo{'oe_lof_upper_bin.'.$refGene}."\n\noe_lof = ".$dicoInfo{'oe_lof.'.$refGene}."\noe_lof_lower = ".$dicoInfo{'oe_lof_lower.'.$refGene} ."\n\n";
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .=  "LOEUF = ".$dicoInfo{'oe_lof_upper.'.$refGene}."\nLOEUF_decile = ".$dicoInfo{'oe_lof_upper_bin.'.$refGene}."\n\noe_lof = ".$dicoInfo{'oe_lof.'.$refGene}."\noe_lof_lower = ".$dicoInfo{'oe_lof_lower.'.$refGene} ."\n\n";
 
             if( $dicoInfo{'oe_lof_upper_bin.'.$refGene} =~ /;/){
 
@@ -2268,7 +2312,7 @@ while( <VCF> ){
 
 		}else{
 
-			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} =  "." ;
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .=  "." ;
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  '#FFFFFF' ;
 
 			#$format_pLI = $workbook->add_format(bg_color => '#FFFFFF');
@@ -3090,7 +3134,9 @@ if($candidates ne ""){
  }
 
 
-
+if (defined $hideACMG){
+	$worksheetACMG->hide();
+}
 
 $workbook->close();
 close(VCF);
