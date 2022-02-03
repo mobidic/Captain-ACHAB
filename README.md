@@ -250,7 +250,8 @@ Add to the script all VCF :
 ```bash
 for i in *.vcf; do echo --variant $i \\ >> vcfmerge.sh ; done
 ```
-Run vcfmerge.sh. Multiallelic lines from vcf have to be split before annotation. Then run the vcf_sample_counter_merger.sh script and you'll get the db.vcf. 
+Run vcfmerge.sh. 
+Multiallelic lines from vcf have to be split before sample counting. Then run the vcf_sample_counter_merger.sh script and you'll get the db.vcf. 
 
 #### Optional : 
 If needed, you can "clean" the all.vcf with this command :
