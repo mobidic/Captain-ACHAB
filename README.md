@@ -192,13 +192,16 @@ Command line to use Captain ACHAB
                         --favouriteGeneRef <File with transcript references to extract in a new column (1 transcript by line) >
                         --filterCustomVCF <integer value, penalizes variant if its frequency in the customVCF is greater than [value] (default key of info field : found=[value])  >
                         --filterCustomVCFRegex <string pattern used as regex to search for a specific field to filter customVCF (default key of info field: 'found=')  >
+                        --addCustomVCFRegex (customVCF field matched with customVCFRegex will be added in a new column - it requires customVCF option -  default regex is 'found=')
                         --pooledSamples <comma separated list of samples that are pooled (it will convert 0/0 genotype into 0/1 if at least 1 read support ALT base and it will flag cell in yellow, e.g. parents pool in trio context)  >
                         --sampleSubset <comma separated list of samples only processed by Achab to the output>
-                        --addCaseDepth (case Depth will be added in a new column) 
+                        --addCaseDepth (case Depth will be added in a new column)
+                        --addCaseAB (case Allelic Balance will be added in a new column)
                         --intersectVCF <VCF format File for comparison (if variant matches then 'yes' will be added in a new 'intersectVCF' column) >
                         --poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in 4th column -requires OMIM genemap2 File- and create an excel file )>
                         --genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )>
                         --skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 )
+                        --hideACMG (ACMG tab will be empty but information will be reported in the gene comment)
                         --help (print this command usage)
 
 
@@ -247,7 +250,7 @@ Add to the script all VCF :
 ```bash
 for i in *.vcf; do echo --variant $i \\ >> vcfmerge.sh ; done
 ```
-Run vcfmerge.sh. Then run the vcf-sample-counter.sh and you'll get the db.vcf.
+Run vcfmerge.sh. Multiallelic lines from vcf have to be split before annotation. Then run the vcf_sample_counter_merger.sh script and you'll get the db.vcf. 
 
 #### Optional : 
 If needed, you can "clean" the all.vcf with this command :
