@@ -53,7 +53,7 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.4";
+my $versionOut = "achab version www:1.0.5";
 
 #################################### VARIABLES INIT ########################
 
@@ -1927,60 +1927,63 @@ while( <VCF> ){
 
 				#$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
 
+
+
+				#record mozaic status of samples and (TODO) low cov for 1/1 genotypes
+				if(($genotype[$formatIndex{'GT'}] eq "0/1" && $AB < $mozaicRate) or ($genotype[$formatIndex{'GT'}] eq "1/1" && $adalt < $mozaicDP     )){
+
+					$mozaicSamples  .= $dicoSamples{$finalcol}{'columnName'}.";";
+
+					#penalty to MPA ranking if trio and mozaic for the index case
+					if(defined $trio && $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
+						$finalSortData[$dicoColumnNbr{'MPA_ranking'}] 	+= 0.1;
+
+						#penalty to low covered ALT base
+						if($adalt < $mozaicDP){
+							$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 0.1;
+						}
+					}
+
+					if($genotype[$formatIndex{'GT'}] eq "1/1"){
+						$mozaicSamples  .= 'cyan'.";";
+						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'cyan';
+
+					}elsif($adalt < $mozaicDP){
+						$mozaicSamples  .= 'purple'.";";
+						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'purple';
+					}else{
+						$mozaicSamples  .= 'pink'.";";
+						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'pink';
+					}
+
+
+				}else{
+					$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'inherit';
+				}
+			
+			
 				# POOL samples treatment, change genotype 0/0 to 0/1 if ALT depth > 1 , give yellow color to the changed sample genotype
-				if (defined $hashPooledSamples{substr($dicoSamples{$finalcol}{'columnName'},9,length($dicoSamples{$finalcol}{'columnName'})-9) }){
+				if ($genotype[$formatIndex{'GT'}] eq "0/0" && $adalt >= 1){
 
-					if ($genotype[$formatIndex{'GT'}] eq "0/0" && $adalt >= 1){
-
+					if (defined $hashPooledSamples{substr($dicoSamples{$finalcol}{'columnName'},9,length($dicoSamples{$finalcol}{'columnName'})-9) }){
 						$mozaicSamples  .= $dicoSamples{$finalcol}{'columnName'}.";";
 						$mozaicSamples  .= 'yellow'.";";
 						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'yellow';
 						$genotype[$formatIndex{'GT'}] = "0/1";
-						$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]." (recomputed pool)\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
+						$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]." (recomputed 0/0)\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
 						#penalize if recomputed pool
-						$finalSortData[$dicoColumnNbr{'MPA_ranking'}] 	+= 0.1;
+						if($dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
+							$finalSortData[$dicoColumnNbr{'MPA_ranking'}] 	+= 0.21;
+						}
 					}else{
 						$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
 						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'inherit';
-					}
+					}	
 				}else{
-
 					#compose comment
 					$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
-
-					#record mozaic status of samples and (TODO) low cov for 1/1 genotypes
-					if(($genotype[$formatIndex{'GT'}] eq "0/1" && $AB < $mozaicRate) or ($genotype[$formatIndex{'GT'}] eq "1/1" && $adalt < $mozaicDP     )){
-
-						$mozaicSamples  .= $dicoSamples{$finalcol}{'columnName'}.";";
-
-						#penalty to MPA ranking if trio and mozaic for the index case
-						if(defined $trio && $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
-							$finalSortData[$dicoColumnNbr{'MPA_ranking'}] 	+= 0.1;
-
-							#penalty to low covered ALT base
-							if($adalt < $mozaicDP){
-								$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 0.1;
-							}
-						}
-
-						if($genotype[$formatIndex{'GT'}] eq "1/1"){
-							$mozaicSamples  .= 'cyan'.";";
-							$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'cyan';
-
-						}elsif($adalt < $mozaicDP){
-							$mozaicSamples  .= 'purple'.";";
-							$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'purple';
-						}else{
-							$mozaicSamples  .= 'pink'.";";
-							$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'pink';
-						}
-
-
-					}else{
-						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'inherit';
-					}
 				}
-
+				
 				# add depth (DP) of the Case in supplementary column
 				if (defined $addCaseDepth && $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
 					$finalSortData[$dicoColumnNbr{'Case Depth'}] = $DP;
