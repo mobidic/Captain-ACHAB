@@ -53,7 +53,7 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.5";
+my $versionOut = "achab version www:1.0.6";
 
 #################################### VARIABLES INIT ########################
 
@@ -295,6 +295,15 @@ if ($case ne "" && $dad ne "" && $mum ne ""){
 #define affected samples List
 if($affected ne ""){
 	chomp $affected;
+	$affected =~ s/"//g; 
+	if(defined $trio and $case ne ""){
+		$affected =~ s/$case,//g; 
+		$affected =~ s/,$case//g; 
+	}
+
+	$affected =~ s/^,//g; 
+	$affected =~ s/,$//g; 
+
 	@affectedArray = split(/,/ , $affected);
 	foreach my $affSample (@affectedArray){
 		if (defined $hashAffected{$affSample}){
@@ -309,6 +318,9 @@ if($affected ne ""){
 #pooled samples , check in header
 if ($pooledSamples ne ""){
 	chomp $pooledSamples;
+	$pooledSamples =~ s/"//g ;
+	$pooledSamples =~ s/^,//g; 
+	$pooledSamples =~ s/,$//g; 
 	@pooledSamplesArray = split(/,/ , $pooledSamples);
 	foreach my $pooled (@pooledSamplesArray){
 		if (defined $hashPooledSamples{$pooled}){
@@ -418,10 +430,13 @@ while( <VCF> ){
 				print STDERR "Found Sample ".$line[$sampleIndex]."\n";
 				push @sampleList, $line[$sampleIndex];
 			}
+			
+			
 
 			#populate non affected-samples array
-			if (defined $hashAffected{$line[$sampleIndex]} or (defined $trio and ($line[$sampleIndex] ne $case or $line[$sampleIndex] ne $dad or $line[$sampleIndex] ne $mum))  ){
+			if (defined $hashAffected{$line[$sampleIndex]} or (defined $trio and ($line[$sampleIndex] eq $case or $line[$sampleIndex] eq $dad or $line[$sampleIndex] eq $mum))  ){
 				#do nothing
+
 			}else{
 				push @nonAffectedArray, $line[$sampleIndex];
 			}
@@ -727,9 +742,44 @@ if($intersectVCF_File ne ""){
 
 		}else{
 
-			$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]} = "yes";
+			#$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]} = "yes";
+			$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]}{"exists"} = "yes";
+			$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]}{"seen"} = 0;
+			$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]}{"Phenotypes"} = "";
+			$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]}{"CLNSIG"} = "";
+			$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]}{"MPA_impact"} = "";
+			
+			
+			########### Split INFOS #####################
+
+			my %intersectInfo;
+			my @infoList = split(';', $intersectVCF_List[7] );
+			foreach my $info (@infoList){
+				
+				my @infoKeyValue = split('=', $info );
+				if (scalar @infoKeyValue == 2){
+					
+					$infoKeyValue[1] =~ s/\\x3d/=/g;
+					$infoKeyValue[1] =~ s/\\x3b/;/g;
+					
+					if ($infoKeyValue[0] eq "CLNSIG") {
+						
+						$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]}{"CLNSIG"} = $infoKeyValue[1];
+					
+					}elsif( $infoKeyValue[0] eq "MPA_impact"){
+						
+						$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]}{"MPA_impact"} = $infoKeyValue[1];
+					
+					}elsif( $infoKeyValue[0] =~ /^Phenotypes/){
+						
+						$intersectVCF_variant{$intersectVCF_List[0]."_".$intersectVCF_List[1]."_".$intersectVCF_List[3]."_".$intersectVCF_List[4]}{"Phenotypes"} = $infoKeyValue[1];
+
+					}
+
+				}
+			}
 		}
-	}
+	}# end while
 	close(INTERSECTVCF);
 }
 
@@ -1786,8 +1836,19 @@ while( <VCF> ){
 		#CHECK IF variant is in intersectVCF
 		if($intersectVCF_File ne ""){
 
-			if( defined $intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}){
+			if( defined $intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}{"exists"}){
 				$finalSortData[$dicoColumnNbr{'intersectVCFannotation'}] = "yes";
+				$intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}{"seen"} ++ ;
+				
+				if ($dicoInfo{"CLNSIG"} ne  $intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}{"CLNSIG"} ){
+					$finalSortData[$dicoColumnNbr{'intersectVCFannotation'}] .= ";CLNSIG:".$intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}{"CLNSIG"}; 
+				}	
+				if ($dicoInfo{"Phenotypes.".$refGene} ne  $intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}{"Phenotypes"} ){
+					$finalSortData[$dicoColumnNbr{'intersectVCFannotation'}] .= ";Phenotypes:".$intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}{"Phenotypes"}; 
+				}	
+				if ($dicoInfo{"MPA_impact"} ne  $intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}{"MPA_impact"} ){
+					$finalSortData[$dicoColumnNbr{'intersectVCFannotation'}] .= ";MPA_impact:".$intersectVCF_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}{"MPA_impact"}; 
+				}	
 
 			}else{
 				$finalSortData[$dicoColumnNbr{'intersectVCFannotation'}] = "no";
@@ -3122,13 +3183,36 @@ $metadataLine ++;
 $worksheetMETA->write( $metadataLine , 0, $vcfHeader );
 $metadataLine ++;
 
+#intersect evaluation
+$metadataLine ++;
+$metadataLine ++;
+$worksheetMETA->write( $metadataLine, 0, "Intersect VCF evaluation:" );
+$metadataLine ++;
 
+my $seenCounter = 0;
+my $interVcfSize = 0;
+if($intersectVCF_File ne ""){
+	foreach my $var (keys %intersectVCF_variant){
+		if (defined $intersectVCF_variant{$var}{"seen"}){
+			$interVcfSize ++;
+			if ($intersectVCF_variant{$var}{"seen"} > 0){
+				$seenCounter ++;
+			}
+		}	
+	}
+	$worksheetMETA->write( $metadataLine, 0, "Nb variants to intersect (current/intersect): ".$count." / ".$interVcfSize );
+	$metadataLine ++;
+	$worksheetMETA->write( $metadataLine, 0, "Nb intersected variants: ".$seenCounter );
+	$metadataLine ++;
+}
+
+# Add autofilter
 $worksheetSNPmumVsCNVdad->autofilter('A1:AZ'.$worksheetLineSNPmumVsCNVdad); # Add autofilter
 $worksheetAR->autofilter('A1:AZ'.$worksheetLineAR); # Add autofilter
 $worksheetDENOVO->autofilter('A1:AZ'.$worksheetLineDENOVO); # Add autofilter
 
 
-
+# fill Candidates
 if($candidates ne ""){
 	foreach my $patho (keys %candidWorksheetHash){
 		my $toto = $candidWorksheetHash{$patho}{'workbook'};
@@ -3136,7 +3220,7 @@ if($candidates ne ""){
 	 }
  }
 
-
+#hide ACMG tab
 if (defined $hideACMG){
 	$worksheetACMG->hide();
 }
@@ -3238,9 +3322,18 @@ if ($poorCoverage_File ne "" &&  $genemap2_File ne ""  ){
 
 				push @poorCoverage_List, $genemap2_variant{$poorCoverage_List[3]} ;
 
+			}elsif($candidates ne ""){
+			
+				if (defined $candidateGene{$poorCoverage_List[3]} ){
+
+					push @poorCoverage_List, "CANDIDATE" ;
+
+				}	
+			
 			}else{
 
 				push @poorCoverage_List, "." ;
+				
 			}
 		}
 
