@@ -298,9 +298,13 @@ if($affected ne ""){
 	$affected =~ s/"//g; 
 	if(defined $trio and $case ne ""){
 		$affected =~ s/$case,//g; 
-		$affected =~ s/,$case//g; 
+		$affected =~ s/,$dad//g; 
+		$affected =~ s/$dad,//g; 
+		$affected =~ s/,$mum//g; 
+		$affected =~ s/$mum,//g; 
 	}
 
+	$affected =~ s/,,/,/g; 
 	$affected =~ s/^,//g; 
 	$affected =~ s/,$//g; 
 
