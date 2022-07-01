@@ -39,7 +39,11 @@ awk -F "\t" 'BEGIN{SAMPLES="";found=0;samplesFound="";HMZ=0;HTZ=0;TOTALSAMPLES=0
 			TOTALSAMPLES++;
 		}
 
-	}else{ if($8~/^found=/){
+	}else{ 
+			VARTAB[$1"_"$2"_"$4"_"$5]["init"]=$0;
+			VARTAB[$1"_"$2"_"$4"_"$5]["startHalf"]=$1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7;
+			
+			if($8~/^found=/){
 				gsub("=|;","\t",$8);
 				split($8,INFO,"\t");
 				found=INFO[2];
@@ -50,36 +54,29 @@ awk -F "\t" 'BEGIN{SAMPLES="";found=0;samplesFound="";HMZ=0;HTZ=0;TOTALSAMPLES=0
 			}else{
 
 				for (i=10;i<=NF; i++){
-					if($i ~ /^0\/1:/ ){
-						found++;
-						HTZ++;
-						samplesFound=sample[i]"/"samplesFound;
-					}else if($i ~ /^1\// ){
-						found++;
-						HMZ++;
-						samplesFound=sample[i]"/"samplesFound;
-					}	
+					allsamples = VARTAB[$1"_"$2"_"$4"_"$5]["samplesFound"];
+					pattern = sample[i]"/";
+
+					if (allsamples !~ pattern){
+						if($i ~ /^0\/1:/ ){
+							found++;
+							HTZ++;
+							samplesFound=sample[i]"/"samplesFound;
+						}else if($i ~ /^1\// ){
+							found++;
+							HMZ++;
+							samplesFound=sample[i]"/"samplesFound;
+						}
+					}
 				}
 			}
 
-			if ($1"_"$2"_"$4"_"$5 in VARTAB){
 
-				VARTAB[$1"_"$2"_"$4"_"$5]["found"] += found;
-				VARTAB[$1"_"$2"_"$4"_"$5]["HTZ"] += HTZ;
-				VARTAB[$1"_"$2"_"$4"_"$5]["HMZ"] += HMZ;
-				VARTAB[$1"_"$2"_"$4"_"$5]["samplesFound"] = VARTAB[$1"_"$2"_"$4"_"$5]["samplesFound"]"/"samplesFound;
+			VARTAB[$1"_"$2"_"$4"_"$5]["found"] += found;
+			VARTAB[$1"_"$2"_"$4"_"$5]["HTZ"] += HTZ;
+			VARTAB[$1"_"$2"_"$4"_"$5]["HMZ"] += HMZ;
+			VARTAB[$1"_"$2"_"$4"_"$5]["samplesFound"] = VARTAB[$1"_"$2"_"$4"_"$5]["samplesFound"]samplesFound;
   
-			}else{
-
-				VARTAB[$1"_"$2"_"$4"_"$5]["full"]=$0;
-				VARTAB[$1"_"$2"_"$4"_"$5]["startHalf"]=$1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7;
-
-				VARTAB[$1"_"$2"_"$4"_"$5]["found"] = found;
-				VARTAB[$1"_"$2"_"$4"_"$5]["HTZ"] = HTZ;
-				VARTAB[$1"_"$2"_"$4"_"$5]["HMZ"] = HMZ;
-				VARTAB[$1"_"$2"_"$4"_"$5]["samplesFound"] = samplesFound;
-			}
-
 			VARTAB[$1"_"$2"_"$4"_"$5]["INFO"]="found="VARTAB[$1"_"$2"_"$4"_"$5]["found"]";HTZ="VARTAB[$1"_"$2"_"$4"_"$5]["HTZ"]";HMZ="VARTAB[$1"_"$2"_"$4"_"$5]["HMZ"]";samplesFound="VARTAB[$1"_"$2"_"$4"_"$5]["samplesFound"];
 		
 			found=0;
