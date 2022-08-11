@@ -237,7 +237,7 @@ sed -i 's/ /_/g' example.vcf
 Contig is necessary in VCF header.
 
 ### Create db.vcf input for Captain Achab
-If you doesn't have database of your variant, you can create a db.vcf with all of your vcfs and Captain ACHAB will tell you how many times the variants is found & in which sample.
+If you doesn't have database of your variant, you can create a db.vcf with all of your vcfs and Captain ACHAB will tell you how many times the variants are found & in which sample.
 
 Put all your vcf in one folder.
 Use GATK Combine Variant to merge all VCF.
@@ -251,8 +251,12 @@ Add to the script all VCF :
 for i in *.vcf; do echo --variant $i \\ >> vcfmerge.sh ; done
 ```
 Run vcfmerge.sh. 
-Multiallelic lines from vcf have to be split before sample counting. Then run the vcf_sample_counter_merger.sh script and you'll get the db.vcf. 
+Multiallelic lines from vcf have to be split before sample counting. 
 
+Then run the vcf_sample_counter_merger.sh script with positionnal arguments and you'll get a *db.vcf*. Alternately, you can also give all your normalized vcf files to merge/count as arguments.  
+```bash
+./vcf_sample_counter_merger.sh outputFileName.vcf  VCF1.vcf VCF2.vcf VCF3.vcf VCF4.vcf VCF5.vcf ......
+```
 #### Optional : 
 If needed, you can "clean" the all.vcf with this command :
 
