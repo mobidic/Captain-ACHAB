@@ -2,7 +2,7 @@
 
 ##### wwwachab.pl ####
 
-# Author : Thomas Guignard 2022
+# Author : Thomas Guignard 2023
 
 # Description :
 # Create an User friendly Excel file from an MPA annotated VCF file.
@@ -24,7 +24,7 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--outPrefix <output file prelifx (default = \"\")>
 \n--candidates <file with end-of-line separated gene symbols of interest (it will create more tabs, if '#myPathology' is present in the file, a 'myPathology' tab will be created) >
 \n--phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores (it will contribute to the final ranking and top50 genes will be added in METADATA tab) >
-\n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01 (based on gnomAD_genome_ALL) >
+\n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01 (based on gnomAD_genome_ALL or on the first field of gnomadGenome argument) >
 \n--trio (requires case dad and mum option to be filled, but if case dad and mum option are filled, trio mode is automatically activated)
 \n\t--case <index_sample_name> (required with trio option)
 \n\t--dad <father_sample_name> (required with trio option)
@@ -51,9 +51,11 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file ) >
 \n--skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 ) 
 \n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
+\n--gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD comments. First field of the list will be filtered regarding to popFreqThr argument, and it will be considered as column name, but it must be different from the exome one. (default fields are hard-coded gnomAD_genome_ALL like)  > 
+\n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. First field of the list will be treated as column name, but it must be different from the genome one. (default fields are hard-coded gnomAD_exome_ALL like) > 
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.6";
+my $versionOut = "achab version www:1.0.7";
 
 #################################### VARIABLES INIT ########################
 
@@ -181,6 +183,13 @@ my $poorCoverage_Line;
 my @poorCoverage_List;
 my %poorCoverage_variant;
 
+#adapt gnomAD names
+my $gnomadGenome_names = "";
+my @gnomadGenome_List;
+my $gnomadGenomeColumn = "gnomAD_genome_ALL";
+my $gnomadExome_names = "";
+my @gnomadExome_List;
+my $gnomadExomeColumn = "gnomAD_exome_ALL";
 
 my $hideACMG;
 
@@ -231,8 +240,10 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"genemap2File:s"	=> \$genemap2_File,
 		"skipCaseWT"		=> \$skipCaseWT,
 		"hideACMG"		=> \$hideACMG,
-    "help|h"			=> \$help,
-    "version|v"   => \$version);
+		"gnomadGenome:s"	=> \$gnomadGenome_names,
+		"gnomadExome:s"	=> \$gnomadExome_names,
+		"help|h"			=> \$help,
+		"version|v"   => \$version);
 
 
 
@@ -348,6 +359,18 @@ if ($IDSNP ne ""){
 			$hashIDSNP{$rs} = "ID";
 		}
 	}
+}
+
+#gnomad names
+if ($gnomadGenome_names ne ""){
+	chomp $gnomadGenome_names;
+	@gnomadGenome_List = split(/,/ , $gnomadGenome_names);
+	$gnomadGenomeColumn = $gnomadGenome_List[0]; 
+}
+if ($gnomadExome_names ne ""){
+	chomp $gnomadExome_names;
+	@gnomadExome_List = split(/,/ , $gnomadExome_names);
+	$gnomadExomeColumn = $gnomadExome_List[0]; 
 }
 
 
@@ -933,8 +956,8 @@ $dicoColumnNbr{'MPA_impact'}=				1;	#+ comment MPA scores and related scores
 $dicoColumnNbr{'Phenolyzer'}=				2;	#Phenolyzer raw score + comment Normalized score
 $dicoColumnNbr{'Gene.'.$refGene}=				3;  #Gene Name + comment LOEUF / Function_description / tissue specificity
 $dicoColumnNbr{'Phenotypes.'.$refGene}=			4;  #OMIM + comment Disease_description
-$dicoColumnNbr{'gnomAD_genome_ALL'}=			5;	#Pop Freq + comment ethny
-$dicoColumnNbr{'gnomAD_exome_ALL'}=			6;	#as well
+$dicoColumnNbr{$gnomadGenomeColumn}=			5;	#Pop Freq + comment ethny
+$dicoColumnNbr{$gnomadExomeColumn}=			6;	#as well
 $dicoColumnNbr{'CLNSIG'}=				7;	#CLinvar
 $dicoColumnNbr{'InterVar_automated'}=			8;	#+ comment ACMG status
 $dicoColumnNbr{'SecondHit-CNV'}=			9;	#TODO
@@ -1129,7 +1152,11 @@ my @CommentMPA_score = ("MPA_ranking",
 
 my $pLI_Comment = "pLI - the probability of being loss-of-function intolerant (intolerant of both heterozygous and homozygous lof variants)\npRec - the probability of being intolerant of homozygous, but not heterozygous lof variants\npNull - the probability of being tolerant of both heterozygous and homozygous lof variants";
 
-my @CommentGnomadGenome = ('gnomAD_genome_ALL',
+my @CommentGnomadGenome;
+if ($gnomadGenome_names ne ""){
+	@CommentGnomadGenome = @gnomadGenome_List;
+}else{
+	@CommentGnomadGenome = ('gnomAD_genome_ALL',
                            'gnomAD_genome_AFR',
                            'gnomAD_genome_AMR',
                            'gnomAD_genome_ASJ',
@@ -1137,12 +1164,13 @@ my @CommentGnomadGenome = ('gnomAD_genome_ALL',
                            'gnomAD_genome_FIN',
                            'gnomAD_genome_NFE',
                            'gnomAD_genome_OTH');
+}
 
-
-
-
-
-my @CommentGnomadExome = ('gnomAD_exome_ALL',
+my @CommentGnomadExome;
+if ($gnomadExome_names ne ""){
+	@CommentGnomadExome = @gnomadExome_List;
+}else{
+	@CommentGnomadExome = ('gnomAD_exome_ALL',
                           'gnomAD_exome_AFR',
                           'gnomAD_exome_AMR',
                           'gnomAD_exome_ASJ',
@@ -1150,6 +1178,7 @@ my @CommentGnomadExome = ('gnomAD_exome_ALL',
                           'gnomAD_exome_FIN',
                           'gnomAD_exome_NFE',
                           'gnomAD_exome_OTH');
+}
 
 
 my %CommentInterVar = (
@@ -1427,14 +1456,13 @@ while( <VCF> ){
 
 		#select only x% pop freq
 		#Use pop freq threshold as an input parameter (default = 1%)
-		next if(( $dicoInfo{'gnomAD_genome_ALL'} ne ".") && ($dicoInfo{'gnomAD_genome_ALL'} > $popFreqThr));
 
 		#convert gnomad freq "." to zero
-		if( $dicoInfo{'gnomAD_genome_ALL'} eq "."){
-			$dicoInfo{'gnomAD_genome_ALL'} = 0;
+		if( $dicoInfo{$gnomadGenomeColumn} eq "."){
+			$dicoInfo{$gnomadGenomeColumn} = 0;
 		}
-		if( $dicoInfo{'gnomAD_exome_ALL'} eq "."){
-			$dicoInfo{'gnomAD_exome_ALL'} = 0;
+		if( $dicoInfo{$gnomadExomeColumn} eq "."){
+			$dicoInfo{$gnomadExomeColumn} = 0;
 		}
 
 		#FILTERING according to newHope option and filterList option
@@ -1486,8 +1514,8 @@ while( <VCF> ){
 				#print "dicoInfo\t".$dicoInfo{$keys}."\n";
 				#print "keys\t".$keys."\n";
 			}else{
-				#check if custom INFO exists in VCF
-				if($dicoColumnNbr{$keys} > (16+$cmpt)){
+				#check if custom INFO exists in VCF or gnomad_genome or gnomad_exome names
+				if($dicoColumnNbr{$keys} > (16+$cmpt) || $dicoColumnNbr{$keys} == 5 || $dicoColumnNbr{$keys} == 6 ){
 					$finalSortData[$dicoColumnNbr{$keys}] = "INFO not found";
 				}
 			}
@@ -3411,8 +3439,8 @@ sub writeThisSheet {
 
 			$worksheet->write_row( $worksheetLine, 0, $hashTemp{'finalArray'} );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'MPA_ranking'},		$hashTemp{'commentMPAscore'} ,x_scale => 2, y_scale => 5 );
-			$worksheet->write_comment( $worksheetLine,$hashColumn{'gnomAD_genome_ALL'},	$hashTemp{'commentGnomADgenome'} ,x_scale => 3, y_scale => 2  );
-			$worksheet->write_comment( $worksheetLine,$hashColumn{'gnomAD_exome_ALL'},	$hashTemp{'commentGnomADexome'} ,x_scale => 3, y_scale => 2  );
+			$worksheet->write_comment( $worksheetLine,$hashColumn{$gnomadGenomeColumn},	$hashTemp{'commentGnomADgenome'} ,x_scale => 3, y_scale => 2  );
+			$worksheet->write_comment( $worksheetLine,$hashColumn{$gnomadExomeColumn},	$hashTemp{'commentGnomADexome'} ,x_scale => 3, y_scale => 2  );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'Genotype-'.$case},	$hashTemp{'commentGenotype'} ,x_scale => 2, y_scale => $hashTemp{'nbSample'} );
 			$worksheet->write_comment( $worksheetLine,$hashColumn{'Func.'.$refGene},		$hashTemp{'commentFunc'} ,x_scale => 3, y_scale => 3  );
 
