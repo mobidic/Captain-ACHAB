@@ -24,7 +24,7 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--outPrefix <output file prelifx (default = \"\")>
 \n--candidates <file with end-of-line separated gene symbols of interest (it will create more tabs, if '#myPathology' is present in the file, a 'myPathology' tab will be created) >
 \n--phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores (it will contribute to the final ranking and top50 genes will be added in METADATA tab) >
-\n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01 (based on gnomAD_genome_ALL or on the first field of gnomadGenome argument) >
+\n--popFreqThr <allelic frequency threshold from 0 to 1 default=0.01 (based on gnomAD_genome_ALL or on the first field of --gnomadGenome argument) >
 \n--trio (requires case dad and mum option to be filled, but if case dad and mum option are filled, trio mode is automatically activated)
 \n\t--case <index_sample_name> (required with trio option)
 \n\t--dad <father_sample_name> (required with trio option)
@@ -51,11 +51,11 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file ) >
 \n--skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 ) 
 \n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
-\n--gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD comments. First field of the list will be filtered regarding to popFreqThr argument, and it will be considered as column name, but it must be different from the exome one. (default fields are hard-coded gnomAD_genome_ALL like)  > 
-\n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. First field of the list will be treated as column name, but it must be different from the genome one. (default fields are hard-coded gnomAD_exome_ALL like) > 
+\n--gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD_Genome comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
+\n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) > 
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.7";
+my $versionOut = "achab version www:1.0.8";
 
 #################################### VARIABLES INIT ########################
 
@@ -912,12 +912,8 @@ if($favouriteGeneRef ne ""){
 
 
 
-#Hash of 73 ACMG incidentalome genes https://www.ncbi.nlm.nih.gov/clinvar/docs/acmg/
-my %ACMGgene = ("ACTA2" =>1,"ACTC1" =>1,"ACVRL1" =>1,"APC" =>1,"APOB" =>1,"ATP7B" =>1,"BMPR1A" =>1,"BRCA1" =>1,"BRCA2" =>1,"BTD" =>1,"CACNA1S" =>1,"CASQ2" =>1,"COL3A1" =>1,"DSC2" =>1,"DSG2" =>1,"DSP" =>1,"ENG" =>1,"FBN1" =>1,"FLNC" =>1,"GAA" =>1,"GLA" =>1,"HFE" =>1,"HNF1A" =>1,"KCNH2" =>1,"KCNQ1" =>1,"LDLR" =>1,"LMNA" =>1,"MAX" =>1,"MEN1" =>1,"MLH1" =>1,"MSH2" =>1,"MSH6" =>1,"MUTYH" =>1,"MYBPC3" =>1,"MYH11" =>1,"MYH7" =>1,"MYL2" =>1,"MYL3" =>1,"NF2" =>1,"OTC" =>1,"PALB2" =>1,"PCSK9" =>1,"PKP2" =>1,"PMS2" =>1,"PRKAG2" =>1,"PTEN" =>1,"RB1" =>1,"RET" =>1,"RPE65" =>1,"RYR1" =>1,"RYR2" =>1,"SCN5A" =>1,"SDHAF2" =>1,"SDHB" =>1,"SDHC" =>1,"SDHD" =>1,"SMAD3" =>1,"SMAD4" =>1,"STK11" =>1,"TGFBR1" =>1,"TGFBR2" =>1,"TMEM127" =>1,"TMEM43" =>1,"TNNI3" =>1,"TNNT2" =>1,"TP53" =>1,"TPM1" =>1,"TRDN" =>1,"TSC1" =>1,"TSC2" =>1,"TTN" =>1,"VHL" =>1,"WT1"=>1);
-
-
-
-
+#Hash of 78 ACMG incidentalome genes secondary findings SF v3.1  https://www.ncbi.nlm.nih.gov/clinvar/docs/acmg/
+my %ACMGgene = ("ACTA2" =>1,"ACTC1" =>1,"ACVRL1" =>1,"APC" =>1,"APOB" =>1,"ATP7B" =>1,"BAG3" =>1,"BMPR1A" =>1,"BRCA1" =>1,"BRCA2" =>1,"BTD" =>1,"CACNA1S" =>1,"CASQ2" =>1,"COL3A1" =>1,"DES" =>1,"DSC2" =>1,"DSG2" =>1,"DSP" =>1,"ENG" =>1,"FBN1" =>1,"FLNC" =>1,"GAA" =>1,"GLA" =>1,"HFE" =>1,"HNF1A" =>1,"KCNH2" =>1,"KCNQ1" =>1,"LDLR" =>1,"LMNA" =>1,"MAX" =>1,"MEN1" =>1,"MLH1" =>1,"MSH2" =>1,"MSH6" =>1,"MUTYH" =>1,"MYBPC3" =>1,"MYH11" =>1,"MYH7" =>1,"MYL2" =>1,"MYL3" =>1,"NF2" =>1,"OTC" =>1,"PALB2" =>1,"PCSK9" =>1,"PKP2" =>1,"PMS2" =>1,"PRKAG2" =>1,"PTEN" =>1,"RB1" =>1,"RBM20" =>1,"RET" =>1,"RPE65" =>1,"RYR1" =>1,"RYR2" =>1,"SCN5A" =>1,"SDHAF2" =>1,"SDHB" =>1,"SDHC" =>1,"SDHD" =>1,"SMAD3" =>1,"SMAD4" =>1,"STK11" =>1,"TGFBR1" =>1,"TGFBR2" =>1,"TMEM127" =>1,"TMEM43" =>1,"TNNC1" =>1,"TNNI3" =>1,"TNNT2" =>1,"TP53" =>1,"TPM1" =>1,"TRDN" =>1,"TSC1" =>1,"TSC2" =>1,"TTN" =>1,"TTR" =>1,"VHL" =>1,"WT1" =>1);
 
 
 
@@ -1111,6 +1107,9 @@ foreach my $key  (sort { $dicoColumnNbr{$a} <=> $dicoColumnNbr{$b} } keys %dicoC
 	push @columnTitles,  $key;
 	#DEBUG print STDERR $key."\n";
 }
+# fix gnomAD column names	
+$columnTitles[5] = "gnomAD_Genome";
+$columnTitles[6] = "gnomAD_Exome";
 
 
 #final strings for comment
