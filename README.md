@@ -176,7 +176,7 @@ Command line to use Captain ACHAB
                         --outPrefix <output file prelifx (default = "")>
                         --candidates <file with end-of-line separated gene symbols of interest (it will create more tabs, if "#myPathology" is present in the file, a myPathology tab will be created)>  
                         --phenolyzerFile <phenolyzer output file suffixed by predicted_gene_scores (it will contribute to the final ranking and top50 genes will be added in METADATA tab)>   
-                        --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01 (based on gnomad_genome_ALL)> 
+                        --popFreqThr <allelic frequency threshold from 0 to 1 default=0.01 (based on gnomad_genome_ALL or on the first field of --gnomadGenome argument)> 
                         --trio (requires case dad and mum option to be filled, but if case dad and mum option are filled, trio mode is automatically activated ) 
                           --case <index_sample_name> (required with trio option)
                           --dad <father_sample_name> (required with trio option)
@@ -201,8 +201,8 @@ Command line to use Captain ACHAB
                         --poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in 4th column -requires OMIM genemap2 File- and create an excel file )>
                         --genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )>
                         --skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 )
-                        --gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD comments. First field of the list will be filtered regarding to popFreqThr argument, and it will be considered as column name, but it must be different from the exome one. (default fields are hard-coded gnomAD_genome_ALL like)  > 
-                        --gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. First field of the list will be treated as column name, but it must be different from the genome one. (default fields are hard-coded gnomAD_exome_ALL like) >
+                        --gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
+                        --gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) >
                         --hideACMG (ACMG tab will be empty but information will be reported in the gene comment)
                         --help (print this command usage)
 
