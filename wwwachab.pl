@@ -1455,6 +1455,7 @@ while( <VCF> ){
 
 		#select only x% pop freq
 		#Use pop freq threshold as an input parameter (default = 1%)
+		next if(( $dicoInfo{$gnomadGenomeColumn} ne ".") && ($dicoInfo{$gnomadGenomeColumn} > $popFreqThr));
 
 		#convert gnomad freq "." to zero
 		if( $dicoInfo{$gnomadGenomeColumn} eq "."){
