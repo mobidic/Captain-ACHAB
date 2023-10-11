@@ -49,13 +49,13 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--intersectVCF <VCF format File for comparison (if variant matches then 'yes' will be added in new 'intersectVCF' column) >
 \n--poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in the 4th column -requires OMIM genemap2 File- and create an excel file )>
 \n--genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file ) >
-\n--skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 ) 
+\n--skipCaseWT (only if trio mode is activated or in 'duo' if case+dad are defined or if case+mum are defined , it will skip variant if case genotype is 0/0 ) 
 \n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
 \n--gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD_Genome comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
 \n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) > 
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.9";
+my $versionOut = "achab version www:1.0.10";
 
 #################################### VARIABLES INIT ########################
 
@@ -171,6 +171,7 @@ my @sampleSubsetArray;
 my $addCaseDepth;
 my $addCaseAB;
 my $skipCaseWT;
+my $duo;
 
 #Poor coverage File and omim genemap2 file
 my $genemap2_File = "";
@@ -300,7 +301,12 @@ if ($case ne "" && $dad ne "" && $mum ne ""){
 	$trio = "";
 }
 
-
+#define duo (at least) if case and dad and not mum or case and mum and not dad are defined => concern skipCaseWT option only
+if ($case ne "" ){
+        if (($dad ne "" && $mum eq "") || ($dad eq "" && $mum ne "")){
+                $duo = "";
+        }
+}
 
 #TODO affected samples
 #define affected samples List
@@ -1176,7 +1182,8 @@ if ($gnomadExome_names ne ""){
                           'gnomAD_exome_EAS',
                           'gnomAD_exome_FIN',
                           'gnomAD_exome_NFE',
-                          'gnomAD_exome_OTH');
+                          'gnomAD_exome_OTH',
+			  'gnomAD_exome_SAS');
 }
 
 
@@ -1335,7 +1342,7 @@ while( <VCF> ){
 	@line = split( /\t/, $current_line );
 
 	#DEBUG print STDERR $dicoColumnNbr{'Gene.'.$refGene}."\n";
-
+ 
 
 
 #############################################
@@ -1522,13 +1529,21 @@ while( <VCF> ){
 		}
 
 
-
 		#split multiple gene names
 		@geneListTemp = split(';', $finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] );
 
 		#uniq genes names
 		@geneList = do { my %seen; grep { !$seen{$_}++ } @geneListTemp };
 
+		#reset gene name
+                $finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] = "";
+        
+                #uniq gene name in output
+                foreach my $geneName (@geneList){
+                        $finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] .= $geneName.";";
+                }
+                # remove last ";"
+                chop($finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]);
 
 
 		#Phenolyzer Column
@@ -2102,6 +2117,13 @@ while( <VCF> ){
 ###################################################################################
 ########## additionnal analysis in TRIO or affected context according to family genotype + CNV
 
+
+		#Do next if index case is 0/0 in duo context
+                if (defined $duo){
+                        if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
+                                next;
+                        }
+                }
 
 		#Penalize (or do next) if index case is 0/0 or parents are 1/1 and not affected. We should treat further all affected genotypes like this (!= 0/0)
 		if (defined $trio){
