@@ -55,7 +55,7 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) > 
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.10";
+my $versionOut = "achab version www:1.0.11";
 
 #################################### VARIABLES INIT ########################
 
@@ -303,9 +303,9 @@ if ($case ne "" && $dad ne "" && $mum ne ""){
 
 #define duo (at least) if case and dad and not mum or case and mum and not dad are defined => concern skipCaseWT option only
 if ($case ne "" ){
-        if (($dad ne "" && $mum eq "") || ($dad eq "" && $mum ne "")){
-                $duo = "";
-        }
+	if (($dad ne "" && $mum eq "") || ($dad eq "" && $mum ne "")){
+ 		$duo = "";
+	}
 }
 
 #TODO affected samples
@@ -1536,14 +1536,14 @@ while( <VCF> ){
 		@geneList = do { my %seen; grep { !$seen{$_}++ } @geneListTemp };
 
 		#reset gene name
-                $finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] = "";
+		$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] = "";
         
-                #uniq gene name in output
-                foreach my $geneName (@geneList){
-                        $finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] .= $geneName.";";
-                }
-                # remove last ";"
-                chop($finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]);
+		#uniq gene name in output
+		foreach my $geneName (@geneList){
+			$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] .= $geneName.";";
+        	}
+        	# remove last ";"
+        	chop($finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]);
 
 
 		#Phenolyzer Column
@@ -2119,11 +2119,11 @@ while( <VCF> ){
 
 
 		#Do next if index case is 0/0 in duo context
-                if (defined $duo){
-                        if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
-                                next;
-                        }
-                }
+  		if (defined $duo){	
+    			if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
+       				next;
+	   		}
+		}
 
 		#Penalize (or do next) if index case is 0/0 or parents are 1/1 and not affected. We should treat further all affected genotypes like this (!= 0/0)
 		if (defined $trio){
@@ -3374,19 +3374,27 @@ if ($poorCoverage_File ne "" &&  $genemap2_File ne ""  ){
 
 		if ($poorCoverage_Line=~/^#/){
 			push @poorCoverage_List, "OMIM";
+   			push @poorCoverage_List, "CANDIDATE";
+      
 		}else{
 
 			#add OMIM phenotypes if exists => Assuming that gene name is in 4th column of poor coverage
 			if (defined $genemap2_variant{$poorCoverage_List[3]}){
-
 				push @poorCoverage_List, $genemap2_variant{$poorCoverage_List[3]} ;
-
-			}elsif($candidates ne ""){
+			}else{
+   				push @poorCoverage_List, "." ;
+      			}
+			
+   			#add CANDIDATES TAG if exists => Assuming that gene name is in 4th column of poor coverage
+   			if($candidates ne ""){
 			
 				if (defined $candidateGene{$poorCoverage_List[3]} ){
+					
+     					$candidateGene{$poorCoverage_List[3]}=~ s/CANDID_//g ;
+					push @poorCoverage_List,  $candidateGene{$poorCoverage_List[3]} ;
 
-					push @poorCoverage_List, "CANDIDATE" ;
-
+				}else{
+					push @poorCoverage_List, "." ;
 				}	
 			
 			}else{
