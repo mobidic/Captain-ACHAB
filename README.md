@@ -18,7 +18,9 @@ Captain ACHAB files are readable with Excel (.xlsx) or web browser (.html) ( or 
 
 - **Mode of inheritance** : Multiples sheets are created depending on assumed mode of inheritance (Autosomal recessive, Autosomal Dominant, Compound Heterozygous, de novo with the --trio option).
 
-- **Selection of gene panels** : --candidates option create a specific sheet with your genes of interests. 
+- **Selection of gene panels** : --candidates option create a specific sheet with your genes of interests.
+
+- **Hyperlinks to MobiDetails** : Variants URL links can be opened on [MobiDetails](https://mobidetails.iurc.montp.inserm.fr/MD/).
 
 - **CNV implementation** : --cnvGeneList option let you add CNV list from your CNV caller into Captain Achab. We recommand to use [MoLLuDiC](https://github.com/mobidic/MoLLuDiC/) or [MobiCNV](https://github.com/mobidic/MobiDL) for CNV calling with a output ready for Captain Achab.  
 ![CNV](img/cnv-achab.png)
@@ -154,7 +156,12 @@ Command line to get predictions for Phenolyzer and the out.predicted_gene_scores
 perl disease_annotation.pl disease.txt -f -p -ph -logistic -out disease/out
 ```
 
-#### 4. Library used
+#### 5. MobiDetails API KEY
+
+In order to activate MobiDetails variant links, you need to have a "MD.apikey" file containing only your personnal MobiDetails API KEY. By default it must be in the same folder as wwwachab.pl. 
+
+
+#### 6. Library used
 
 Python library : pandas and dependencies (only tested with python 2.7)
 
@@ -170,7 +177,7 @@ https://github.com/mobidic/Captain-ACHAB.git
 Command line to use Captain ACHAB 
 
 ```
-#USAGE : perl achab.pl 
+#USAGE : perl wwwachab.pl 
                         --vcf <vcf_file> (mandatory)
                         --outDir <output directory (default = current dir)>
                         --outPrefix <output file prelifx (default = "")>
@@ -200,7 +207,7 @@ Command line to use Captain ACHAB
                         --intersectVCF <VCF format File for comparison (if variant matches then 'yes' will be added in a new 'intersectVCF' column) >
                         --poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in 4th column -requires OMIM genemap2 File- and create an excel file )>
                         --genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )>
-                        --skipCaseWT (only if trio mode is activated, it will skip variant if case genotype is 0/0 )
+                        --skipCaseWT (only if trio mode is activated or in duo context (case and dad or mum must ne specified), it will skip variant if case genotype is 0/0 )
                         --gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
                         --gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) >
                         --hideACMG (ACMG tab will be empty but information will be reported in the gene comment)
