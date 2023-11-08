@@ -54,9 +54,10 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
 \n--gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD_Genome comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
 \n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) > 
+\n--MDAPIkey <Path to File containing MobiDetails API key (default file is MD.apikey in the achab folder) >
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.12";
+my $versionOut = "achab version www:1.0.13";
 
 #################################### VARIABLES INIT ########################
 
@@ -208,9 +209,8 @@ my $vcfHeader = "";
 my @buttonArray ;
 my %tagsHash;
 
-#URL
+#URL corner
 my $mdAPIkey = "";
-$mdAPIkey = dirname(__FILE__)."/MD.apikey";
 my $md_line = "";
 my $franklinURL = "https://franklin.genoox.com/clinical-db/variant/snp/";
 
@@ -251,6 +251,7 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"hideACMG"		=> \$hideACMG,
 		"gnomadGenome:s"	=> \$gnomadGenome_names,
 		"gnomadExome:s"	=> \$gnomadExome_names,
+		"MDAPIkey:s"	=> \$mdAPIkey,
 		"help|h"			=> \$help,
 		"version|v"   => \$version);
 
@@ -922,25 +923,59 @@ if($favouriteGeneRef ne ""){
 }
 
 
+#parse genemap2 file
+if ( $genemap2_File ne ""  ){
+	open(GENEMAP2 , "<$genemap2_File") or die("Cannot open genemap2 file ".$genemap2_File) ;
+	print  STDERR "Processing genemap2 file ... \n" ;
 
-#get mobidetails API key from achab script location
-if ($mdAPIkey ne ""){
-	open( MDAPIKEY , "<$mdAPIkey") or do {print "Didn't find any MDapi key file, expected: ".$mdAPIkey."\n"; $mdAPIkey = "";  } ;
-	if ($mdAPIkey ne ""){
-		print  STDERR "Processing MDAPIKEY file ... \n" ;
-		while( <MDAPIKEY> ){
-			$md_line = $_;
-			chomp $md_line;
-			if ($md_line eq ""){
-				$mdAPIkey = "";
-				#print "DEBUG:    ".$mdAPIkey."\n";
+	while( <GENEMAP2> ){
+
+  		$genemap2_Line = $_;
+
+		#skip header
+		next if ($genemap2_Line=~/^#/);
+
+		chomp $genemap2_Line;
+		@genemap2_List = split( /\t/, $genemap2_Line );
+
+		if (defined $genemap2_List[8]  && $genemap2_List[8] ne ""){
+			if (defined $genemap2_variant{$genemap2_List[8]}){
+				if (! defined $genemap2_List[12]){
+					$genemap2_List[12] = "";
+				}
+
+				$genemap2_variant{$genemap2_List[8]} .= ";".$genemap2_List[12];
+
 			}else{
-				$mdAPIkey = "https://mobidetails.iurc.montp.inserm.fr/MD/api/variant/create_vcf_str?genome_version=hg19&api_key=".$md_line."&vcf_str=";
+				$genemap2_variant{$genemap2_List[8]} = $genemap2_List[12];
 			}
 		}
 	}
-	close(MDAPIKEY);
+	close(GENEMAP2);
 }
+
+
+#get mobidetails API key from achab script location or argument
+if ($mdAPIkey eq ""){
+	$mdAPIkey = dirname(__FILE__)."/MD.apikey";
+}
+
+open( MDAPIKEY , "<$mdAPIkey") or do {print "Didn't find any MoBiDetails APIkey file, expected: ".$mdAPIkey."\n"; $mdAPIkey = "";  } ;
+if ($mdAPIkey ne ""){
+	print  STDERR "Processing MDAPIKEY file ... \n" ;
+	while( <MDAPIKEY> ){
+		$md_line = $_;
+		chomp $md_line;
+		if ($md_line eq ""){
+			$mdAPIkey = "";
+			#print "DEBUG:    ".$mdAPIkey."\n";
+		}else{
+			$mdAPIkey = "https://mobidetails.iurc.montp.inserm.fr/MD/api/variant/create_vcf_str?genome_version=hg19&api_key=".$md_line."&vcf_str=";
+		}
+	}
+}
+close(MDAPIKEY);
+
 
 
 
@@ -1576,9 +1611,23 @@ while( <VCF> ){
 		#uniq gene name in output
 		foreach my $geneName (@geneList){
 			$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] .= $geneName.";";
-        	}
-        	# remove last ";"
-        	chop($finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]);
+			
+			#try to rescue OMIM annotation in multiple gene lines
+			if (scalar @geneListTemp > 1){
+				if (defined $dicoInfo{'Phenotypes.'.$refGene} ){
+					if ($dicoInfo{'Phenotypes.'.$refGene} eq "." ){
+						if (defined $genemap2_variant{$geneName} ){
+							if ( $genemap2_variant{$geneName} ne ""){
+								$finalSortData[$dicoColumnNbr{'Phenotypes.'.$refGene}] .=  $genemap2_variant{$geneName}.";";
+								$dicoInfo{'Phenotypes.'.$refGene} .= $genemap2_variant{$geneName}.";";
+							}
+						}
+					}
+				}
+			}
+        }
+        # remove last ";"
+        chop($finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]);
 
 
 		#Phenolyzer Column
@@ -3234,21 +3283,27 @@ if(defined $trio){
 	$worksheetSNPdadVsCNVmum->autofilter('A1:AZ'.$worksheetLineSNPdadVsCNVmum); # Add autofilter
 
 
-	#check inheritance consistency and add to METADATA
+	#approximative correction of pooled dad and mum number variant by 4 (pool of 4)  
+	if (defined $hashPooledSamples{$dad} && defined $hashPooledSamples{$mum}){
+		$dadVariant = $dadVariant/4;
+		$mumVariant = $mumVariant/4;
+	}
+
+	#check inheritance consistency and add to METADATA : log(transmis/nontransmis) between -0.13 and 0.1
  	if ( $dadVariant > 0 && $mumVariant > 0 && $caseDadVariant > 0 && $caseMumVariant > 0){
 
-		if ( log($caseDadVariant/$dadVariant) / log(10) < 0.1 ){
-			$worksheetMETA->write($metadataLine , 0, "Dad status : OK (log10(".$caseDadVariant."/".$dadVariant.") < 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+		if ( log($caseDadVariant/$dadVariant) / log(10) < 0.1 && log($caseDadVariant/$dadVariant) / log(10) > -0.13  ){
+			$worksheetMETA->write($metadataLine , 0, "Dad status : OK (log10(".$caseDadVariant."/".$dadVariant.") is in the range -0.13 to 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
 		}else{
-			$worksheetMETA->write($metadataLine , 0, "Dad status : BAD (log10(".$caseDadVariant."/".$dadVariant.") > 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Dad status : BAD (log10(".$caseDadVariant."/".$dadVariant.") is out of range -0.13 to 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
 		}
 
 		$metadataLine ++;
 
-		if ( log($caseMumVariant/$mumVariant) / log(10) < 0.1 ){
-			$worksheetMETA->write($metadataLine , 0, "Mum status : OK (log10(".$caseMumVariant."/".$mumVariant.") < 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+		if ( log($caseMumVariant/$mumVariant) / log(10) < 0.1  && log($caseMumVariant/$mumVariant) / log(10) > -0.13 ){
+			$worksheetMETA->write($metadataLine , 0, "Mum status : OK (log10(".$caseMumVariant."/".$mumVariant.") is in the range -0.13 to 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
 		}else{
-			$worksheetMETA->write($metadataLine , 0, "Mum status : BAD (log10(".$caseMumVariant."/".$mumVariant.") > 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Mum status : BAD (log10(".$caseMumVariant."/".$mumVariant.") is out of range -0.13 to 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
 		}
 
 		$metadataLine ++;
@@ -3379,34 +3434,6 @@ if ($poorCoverage_File ne "" &&  $genemap2_File ne ""  ){
 	$worksheetCoverage->freeze_panes( 1, 0 );    # Freeze the first row
 
 
-	open(GENEMAP2 , "<$genemap2_File") or die("Cannot open poorCoverage file ".$genemap2_File) ;
-	print  STDERR "Processing genemap2 file ... \n" ;
-
-	while( <GENEMAP2> ){
-
-  		$genemap2_Line = $_;
-
-#############################################
-##############   skip header
-		next if ($genemap2_Line=~/^#/);
-
-		chomp $genemap2_Line;
-		@genemap2_List = split( /\t/, $genemap2_Line );
-
-		if (defined $genemap2_List[8]  && $genemap2_List[8] ne ""){
-			if (defined $genemap2_variant{$genemap2_List[8]}){
-				if (! defined $genemap2_List[12]){
-					$genemap2_List[12] = "";
-				}
-
-				$genemap2_variant{$genemap2_List[8]} .= ";".$genemap2_List[12];
-
-			}else{
-				$genemap2_variant{$genemap2_List[8]} = $genemap2_List[12];
-			}
-		}
-	}
-	close(GENEMAP2);
 
 
 	open(POORCOV , "<$poorCoverage_File") or die("Cannot open poorCoverage file ".$poorCoverage_File) ;
