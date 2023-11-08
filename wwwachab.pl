@@ -54,7 +54,7 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
 \n--gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD_Genome comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
 \n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) > 
-\n--MDAPIkey <Path to File containing MobiDetails API key (default file is MD.apikey in the achab folder) >
+\n--MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder) >
 \n\n-v|--version < return version number and exit > ";
 
 my $versionOut = "achab version www:1.0.13";
@@ -961,22 +961,25 @@ if ($mdAPIkey eq ""){
 }
 
 open( MDAPIKEY , "<$mdAPIkey") or do {print "Didn't find any MoBiDetails APIkey file, expected: ".$mdAPIkey."\n"; $mdAPIkey = "";  } ;
-if ($mdAPIkey ne ""){
-	print  STDERR "Processing MDAPIKEY file ... \n" ;
-	while( <MDAPIKEY> ){
-		$md_line = $_;
-		chomp $md_line;
-		if ($md_line eq ""){
-			$mdAPIkey = "";
-			#print "DEBUG:    ".$mdAPIkey."\n";
-		}else{
-			$mdAPIkey = "https://mobidetails.iurc.montp.inserm.fr/MD/api/variant/create_vcf_str?genome_version=hg19&api_key=".$md_line."&vcf_str=";
+#checkif file is empty
+if (-z $mdAPIkey){
+	$mdAPIkey = "";
+	print "The MoBiDetails APIkey file: ".$mdAPIkey. " is empty. Please fill it";
+}else{
+	if ($mdAPIkey ne ""){
+		print  STDERR "Processing MDAPIKEY file ... \n" ;
+		while( <MDAPIKEY> ){
+			$md_line = $_;
+			chomp $md_line;
+			if ($md_line eq ""){
+				$mdAPIkey = "";
+			}else{
+				$mdAPIkey = "https://mobidetails.iurc.montp.inserm.fr/MD/api/variant/create_vcf_str?genome_version=hg19&api_key=".$md_line."&vcf_str=";
+			}
 		}
 	}
 }
 close(MDAPIKEY);
-
-
 
 
 
