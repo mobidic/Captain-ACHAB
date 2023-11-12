@@ -35,7 +35,7 @@ To be notice : More informations are available when mouse is hovering over the c
 
 **2. Filter variant depending on general population frequency :**  
 
-Default frequency threshold is 0.01 in gnomAD_genome (1%).
+Default frequency threshold is 0.01 in gnomAD_genome_ALL (1%).
 
 ![gnomAD](img/gnomad-achab.png)
 
@@ -158,7 +158,7 @@ perl disease_annotation.pl disease.txt -f -p -ph -logistic -out disease/out
 
 #### 5. MobiDetails API KEY
 
-In order to activate MobiDetails variant links, you need to have a "MD.apikey" file containing only your personnal MobiDetails API KEY. By default it must be in the same folder as wwwachab.pl. 
+In order to activate MobiDetails variant links, you need to have a "MD.apikey" file containing only your personnal MobiDetails API KEY. By default it must be in the same folder as wwwachab.pl, or specify the path/name 
 
 
 #### 6. Library used
@@ -211,7 +211,9 @@ Command line to use Captain ACHAB
                         --gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
                         --gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) >
                         --hideACMG (ACMG tab will be empty but information will be reported in the gene comment)
+                        --MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder, default build is hg19, but vcf header is parsed to check if hg38 and correct url ) >
                         --help (print this command usage)
+
 
 
 ```
