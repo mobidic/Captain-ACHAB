@@ -57,7 +57,7 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder, default build is hg19, but vcf header is parsed to check if hg38 and correct url ) >
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.14";
+my $versionOut = "achab version www:1.0.15";
 
 #################################### VARIABLES INIT ########################
 
@@ -1620,8 +1620,8 @@ while( <VCF> ){
 		foreach my $geneName (@geneList){
 			$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] .= $geneName.";";
 			
-			#try to rescue OMIM annotation in multiple gene lines
-			if (scalar @geneListTemp > 1){
+			#try to rescue OMIM annotation with gene name
+			#if (scalar @geneListTemp > 1){
 				if (defined $dicoInfo{'Phenotypes.'.$refGene} ){
 					if ($dicoInfo{'Phenotypes.'.$refGene} eq "." ){
 						if (defined $genemap2_variant{$geneName} ){
@@ -1632,7 +1632,7 @@ while( <VCF> ){
 						}
 					}
 				}
-			}
+				#}
 		}
 		# remove last ";"
 		chop($finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]);
