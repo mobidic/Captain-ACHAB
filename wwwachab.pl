@@ -54,17 +54,17 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--hideACMG (ACMG tab will be empty but information will be reported in the gene comment) 
 \n--gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD_Genome comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
 \n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) > 
-\n--MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder) >
+\n--MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder, default build is hg19, but vcf header is parsed to check if hg38 and correct url ) >
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.13";
+my $versionOut = "achab version www:1.0.14";
 
 #################################### VARIABLES INIT ########################
 
 #catch argument for METADATA
 my $achabArg = "";
 foreach my $a(@ARGV){
-    $achabArg .= $a."   ";
+	$achabArg .= $a."   ";
 }
 
 
@@ -213,7 +213,7 @@ my %tagsHash;
 my $mdAPIkey = "";
 my $md_line = "";
 my $franklinURL = "https://franklin.genoox.com/clinical-db/variant/snp/";
-
+my $build = "hg19";
 
 #$arguments = GetOptions( "vcf=s" => \$incfile ) or pod2usage(-vcf => "$0: argument required\n") ;
 
@@ -417,16 +417,21 @@ while( <VCF> ){
 
 	chomp $current_line;
 
-    #filling dicoParam with VCF header INFO and FORMAT
+	#filling dicoParam with VCF header INFO and FORMAT
 
-    if ($current_line=~/^##/){
+	if ($current_line=~/^##/){
 
-        $vcfHeader .= $_;
+		$vcfHeader .= $_;
 
-		  unless ($current_line=~/Description=/){ next }
-      #DEBUG print STDERR "Header line\n";
+		#deduce genome build from header , like bcftools command line including with genome fasta	
+		if ($current_line=~/38\.fa/){
+			$build = "hg38";
+		}
 
-      if ($current_line =~ /ID=(.+?),.*?Description="(.+?)"/){
+		unless ($current_line=~/Description=/){ next }
+		#DEBUG print STDERR "Header line\n";
+
+		if ($current_line =~ /ID=(.+?),.*?Description="(.+?)"/){
 
 
 		$dicoParam{$1}= $2;
@@ -436,12 +441,12 @@ while( <VCF> ){
 
 		next;
 
-      }else {print STDERR "pattern not found in this line: ".$current_line ."\n";next}
+	  }else {print STDERR "pattern not found in this line: ".$current_line ."\n";next}
 
 	}elsif($current_line=~/^#CHROM/){
 		#check sample names or die
 
-        $vcfHeader .= $_;
+		$vcfHeader .= $_;
 
 
 		if (defined $trio){
@@ -485,7 +490,7 @@ while( <VCF> ){
 
 			#for each final position for sample
 #			foreach my $finCol (keys %dicoSamples){
-    	    #DEBUG
+			#DEBUG
 #				if ($dicoSamples{$finCol}{'columnName'} eq "Genotype-".$line[$sampleIndex] ){
 #					$dicoSamples{$finCol}{'columnIndex'} =  $sampleIndex;
 #					last;
@@ -974,7 +979,7 @@ if (-z $mdAPIkey){
 			if ($md_line eq ""){
 				$mdAPIkey = "";
 			}else{
-				$mdAPIkey = "https://mobidetails.iurc.montp.inserm.fr/MD/api/variant/create_vcf_str?genome_version=hg19&api_key=".$md_line."&vcf_str=";
+				$mdAPIkey = "https://mobidetails.iurc.montp.inserm.fr/MD/api/variant/create_vcf_str?genome_version=".$build."&api_key=".$md_line."&vcf_str=";
 			}
 		}
 	}
@@ -1111,10 +1116,10 @@ $dicoColumnNbr{'#CHROMPOSREFALT'}=	10+$cmpt ;
 #$dicoColumnNbr{'ID'}=		13+$cmpt ;
 #$dicoColumnNbr{'REF'}=		14+$cmpt ;
 #$dicoColumnNbr{'ALT'}=		15+$cmpt ;
-#$dicoColumnNbr{'FILTER'}=	16+$cmpt ;
+$dicoColumnNbr{'FILTER'}=	11+$cmpt ;
 
 #Add custom Info in additionnal columns
-my $lastColumn = 11+$cmpt;
+my $lastColumn = 12+$cmpt;
 
 # add case depth
 if($case ne "" && defined $addCaseDepth){
@@ -1227,13 +1232,13 @@ if ($gnomadGenome_names ne ""){
 	@CommentGnomadGenome = @gnomadGenome_List;
 }else{
 	@CommentGnomadGenome = ('gnomAD_genome_ALL',
-                           'gnomAD_genome_AFR',
-                           'gnomAD_genome_AMR',
-                           'gnomAD_genome_ASJ',
-                           'gnomAD_genome_EAS',
-                           'gnomAD_genome_FIN',
-                           'gnomAD_genome_NFE',
-                           'gnomAD_genome_OTH');
+						   'gnomAD_genome_AFR',
+						   'gnomAD_genome_AMR',
+						   'gnomAD_genome_ASJ',
+						   'gnomAD_genome_EAS',
+						   'gnomAD_genome_FIN',
+						   'gnomAD_genome_NFE',
+						   'gnomAD_genome_OTH');
 }
 
 my @CommentGnomadExome;
@@ -1241,21 +1246,21 @@ if ($gnomadExome_names ne ""){
 	@CommentGnomadExome = @gnomadExome_List;
 }else{
 	@CommentGnomadExome = ('gnomAD_exome_ALL',
-                          'gnomAD_exome_AFR',
-                          'gnomAD_exome_AMR',
-                          'gnomAD_exome_ASJ',
-                          'gnomAD_exome_EAS',
-                          'gnomAD_exome_FIN',
-                          'gnomAD_exome_NFE',
-                          'gnomAD_exome_OTH',
-			  'gnomAD_exome_SAS');
+						  'gnomAD_exome_AFR',
+						  'gnomAD_exome_AMR',
+						  'gnomAD_exome_ASJ',
+						  'gnomAD_exome_EAS',
+						  'gnomAD_exome_FIN',
+						  'gnomAD_exome_NFE',
+						  'gnomAD_exome_OTH',
+						  'gnomAD_exome_SAS');
 }
 
 
 my %CommentInterVar = (
 'PVS1' => "Certain types of variants (e.g., nonsense, frameshift, canonical +- 1 or 2 splice sites, initiation codon, single exon or multiexon deletion) in a gene where LOF is a known mechanism of diseas",
 'PS1' => "Same amino acid change as a previously established pathogenic variant regardless of nucleotide change
-    Example: Val->Leu caused by either G>C or G>T in the same codon",
+	Example: Val->Leu caused by either G>C or G>T in the same codon",
 'PS2' => "De novo (both maternity and paternity confirmed) in a patient with the disease and no family history",
 'PS3' => "Well-established in vitro or in vivo functional studies supportive of a damaging effect on the gene or gene product",
 'PS4' => "The prevalence of the variant in affected individuals is significantly increased compared with the prevalence in controls; OR>5 in all the gwas, the dataset is from gwasdb jjwanglab.org/gwasdb",
@@ -1276,7 +1281,7 @@ my %CommentInterVar = (
 'BS3' => "Well-established in vitro or in vivo functional studies show no damaging effect on protein function or splicing",
 'BS4' => "Lack of segregation in affected members of a family",
 'BP1' => "Missense variant in a gene for which primarily truncating variants are known to cause disease truncating:  stop_gain / frameshift deletion/  nonframshift deletion
-	    We defined Protein truncating variants  (4) (table S1) as single-nucleotide variants (SNVs) predicted to introduce a premature stop codon or to disrupt a splice site, small insertions or deletions (indels) predicted to disrupt a transcript reading frame, and larger deletions ",
+		We defined Protein truncating variants  (4) (table S1) as single-nucleotide variants (SNVs) predicted to introduce a premature stop codon or to disrupt a splice site, small insertions or deletions (indels) predicted to disrupt a transcript reading frame, and larger deletions ",
 'BP2' => "Observed in trans with a pathogenic variant for a fully penetrant dominant gene/disorder or observed in cis with a pathogenic variant in any inheritance pattern",
 'BP3' => "In-frame deletions/insertions in a repetitive region without a known function if the repetitive region is in the domain, this BP3 should not be applied.",
 'BP4' => "Multiple lines of computational evidence suggest no impact on gene or gene product (conservation, evolutionary,splicing impact, etc.)",
@@ -1284,7 +1289,7 @@ my %CommentInterVar = (
 check the genes whether are for mutilfactor disorder. The reviewers suggeset to disable the OMIM morbidmap for BP5",
 'BP6' => "Reputable source recently reports variant as benign, but the evidence is not available to the laboratory to perform an independent evaluation; Check the ClinVar column to see whether this is \"benign\".",
 'BP7' => "A synonymous (silent) variant for which splicing prediction algorithms predict no impact to the
-    splice consensus sequence nor the creation of a new splice site AND the nucleotide is not highly conserved"
+	splice consensus sequence nor the creation of a new splice site AND the nucleotide is not highly conserved"
 );
 
 
@@ -1421,13 +1426,13 @@ while( <VCF> ){
 
 		#############CHECK IF $nbrSample == $cmpt else exit error nbr sample
 
-	    #find correct index for samples of the family
+		#find correct index for samples of the family
 		#for each sample position
 		for( my $sampleIndex = 9 ; $sampleIndex < scalar @line; $sampleIndex++){
 
 			#for each final position for sample
 			foreach my $finCol (keys %dicoSamples){
-    	    #DEBUG
+			#DEBUG
 
 				if ($dicoSamples{$finCol}{'columnName'} eq "Genotype-".$line[$sampleIndex] ){
 					$dicoSamples{$finCol}{'columnIndex'} =  $sampleIndex;
@@ -1469,7 +1474,7 @@ while( <VCF> ){
 		#$finalSortData[$dicoColumnNbr{'ID'}]=		$line[2];
 		#$finalSortData[$dicoColumnNbr{'REF'}]=		$line[3];
 		#$finalSortData[$dicoColumnNbr{'ALT'}]=		$line[4];
-		#$finalSortData[$dicoColumnNbr{'FILTER'}]=	$line[6];
+		$finalSortData[$dicoColumnNbr{'FILTER'}]=	$line[6];
 
 
 
@@ -1610,7 +1615,7 @@ while( <VCF> ){
 
 		#reset gene name
 		$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] = "";
-        
+		
 		#uniq gene name in output
 		foreach my $geneName (@geneList){
 			$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}] .= $geneName.";";
@@ -1628,9 +1633,9 @@ while( <VCF> ){
 					}
 				}
 			}
-        }
-        # remove last ";"
-        chop($finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]);
+		}
+		# remove last ";"
+		chop($finalSortData[$dicoColumnNbr{'Gene.'.$refGene}]);
 
 
 		#Phenolyzer Column
@@ -1711,7 +1716,7 @@ while( <VCF> ){
 		if(($finalSortData[$dicoColumnNbr{'MPA_ranking'}] >= 5 && $finalSortData[$dicoColumnNbr{'MPA_ranking'}] < 6 )|| ($finalSortData[$dicoColumnNbr{'MPA_ranking'}] >= 7 && $finalSortData[$dicoColumnNbr{'MPA_ranking'}] < 8 ) || ($finalSortData[$dicoColumnNbr{'MPA_ranking'}] >= 9 && $finalSortData[$dicoColumnNbr{'MPA_ranking'}] < 10 )  ){
 			#$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'});
 
-            #LOEUF refinement
+			#LOEUF refinement
 
 
 
@@ -1723,9 +1728,9 @@ while( <VCF> ){
 
 
 
-                #oe_mis_upper  MAX=    MIN=
+				#oe_mis_upper  MAX=    MIN=
 
-                $finalSortData[$dicoColumnNbr{'MPA_ranking'}] += $dicoInfo{"oe_mis_upper.".$refGene}/20000 ;
+				$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += $dicoInfo{"oe_mis_upper.".$refGene}/20000 ;
 
 
 			}else{
@@ -1745,14 +1750,14 @@ while( <VCF> ){
 
 		}elsif(defined $dicoInfo{"oe_lof_upper.".$refGene} && $dicoInfo{"oe_lof_upper.".$refGene} ne "." ){
 
-            #LOEUF  MAX=1.996    MIN=0.03
+			#LOEUF  MAX=1.996    MIN=0.03
 
-           #clean double LOEUF
-            $dicoInfo{"oe_lof_upper.".$refGene} =~ s/;\.//g;
-            $finalSortData[$dicoColumnNbr{'MPA_ranking'}] += $dicoInfo{"oe_lof_upper.".$refGene}/20000 ;
+		   #clean double LOEUF
+			$dicoInfo{"oe_lof_upper.".$refGene} =~ s/;\.//g;
+			$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += $dicoInfo{"oe_lof_upper.".$refGene}/20000 ;
 
 
-            #$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (0.0001-(($dicoInfo{"pLi.".$refGene}/10000 +  $dicoInfo{"pRec.".$refGene}/100000 + $dicoInfo{"pNull.".$refGene}/1000000))) ;
+			#$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += (0.0001-(($dicoInfo{"pLi.".$refGene}/10000 +  $dicoInfo{"pRec.".$refGene}/100000 + $dicoInfo{"pNull.".$refGene}/1000000))) ;
 					#print $finalSortData[$dicoColumnNbr{'MPA_ranking'}]."\n";
 
 
@@ -1776,20 +1781,20 @@ while( <VCF> ){
 		#Initialize list of variant tags
 		$worksheetTAG = "";
 
-        #Classify OMIM dominant and/or recessive gene variant
-        if (defined $dicoInfo{'Phenotypes.'.$refGene} ){
+		#Classify OMIM dominant and/or recessive gene variant
+		if (defined $dicoInfo{'Phenotypes.'.$refGene} ){
 
-            if($dicoInfo{'Phenotypes.'.$refGene} =~ m/dominant/ ){
-                $worksheetTAG .= " OMIMDOM";
+			if($dicoInfo{'Phenotypes.'.$refGene} =~ m/dominant/ ){
+				$worksheetTAG .= " OMIMDOM";
 				$tagsHash{"OMIMDOM"}{'count'} ++;
-            }
+			}
 
-            if($dicoInfo{'Phenotypes.'.$refGene} =~ m/recessive/ ){
-                $worksheetTAG .= " OMIMREC";
+			if($dicoInfo{'Phenotypes.'.$refGene} =~ m/recessive/ ){
+				$worksheetTAG .= " OMIMREC";
 				$tagsHash{"OMIMREC"}{'count'} ++;
-            }
+			}
 
-        }
+		}
 
 
 
@@ -2005,11 +2010,11 @@ while( <VCF> ){
 				my @genotype = split(':', $line[$dicoSamples{$finalcol}{'columnIndex'}] );
 				#my $genotype =  $line[$dicoSamples{$finalcol}{'columnIndex'}];
 
-                my $DP; #total Depth
+				my $DP; #total Depth
 
-                if (defined $formatIndex{'DP'}){
-				    $DP = $genotype[$formatIndex{'DP'}];
-                }
+				if (defined $formatIndex{'DP'}){
+					$DP = $genotype[$formatIndex{'DP'}];
+				}
 
 
 				my $adalt;	#Alternative Allelic Depth
@@ -2207,31 +2212,35 @@ while( <VCF> ){
 
 		#Do next if index case is 0/0 in duo context
   		if (defined $duo){	
-    			if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
-       				next;
-	   		}
-		}
+			if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
+	   			next;
+			}
+	   	}
 
 		#Penalize (or do next) if index case is 0/0 or parents are 1/1 and not affected. We should treat further all affected genotypes like this (!= 0/0)
 		if (defined $trio){
+			
+			# exclude chromosome X variants due to mother/son unbalance
+			if ($line[0]!~/X/){
 
-			if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
+				if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
+					switch ($familyGenotype){
+						#Check if case/dad and case/mum  inheritance are  consistent
+						case /^_0\/0_0\/1_0\/0_/ {$dadVariant ++ ;}
+						case /^_0\/0_0\/0_0\/1_/ {$mumVariant ++ ;}
+					}
+						next;
+				}
+
 				switch ($familyGenotype){
 					#Check if case/dad and case/mum  inheritance are  consistent
 					case /^_0\/0_0\/1_0\/0_/ {$dadVariant ++ ;}
 					case /^_0\/0_0\/0_0\/1_/ {$mumVariant ++ ;}
+					case /^_0\/1_0\/1_0\/0_/ {$caseDadVariant ++;}
+					case /^_0\/1_0\/0_0\/1_/ {$caseMumVariant ++;}
+
 				}
-    				next;
-			}
-
-			switch ($familyGenotype){
-				#Check if case/dad and case/mum  inheritance are  consistent
-				case /^_0\/0_0\/1_0\/0_/ {$dadVariant ++ ;}
-				case /^_0\/0_0\/0_0\/1_/ {$mumVariant ++ ;}
-				case /^_0\/1_0\/1_0\/0_/ {$caseDadVariant ++;}
-				case /^_0\/1_0\/0_0\/1_/ {$caseMumVariant ++;}
-
-			}
+			}	
 
 			if ($finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0" or (! defined $hashAffected{$dad} and $finalSortData[$dicoColumnNbr{"Genotype-".$dad}] eq "1/1") or (! defined $hashAffected{$mum} and $finalSortData[$dicoColumnNbr{"Genotype-".$mum}] eq "1/1") ){
 				$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
@@ -2418,7 +2427,7 @@ while( <VCF> ){
 		}else{
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'MDurl'} = "https://mobidetails.iurc.montp.inserm.fr/MD/vars/".$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}];
 		}	
-		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'Franklinurl'} = $franklinURL.$finalSortData[$dicoColumnNbr{'#CHROMPOSREFALT'}];
+		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'Franklinurl'} = $franklinURL.$finalSortData[$dicoColumnNbr{'#CHROMPOSREFALT'}]."-".$build;
 		
 
 		# attribute mozaic color
@@ -2442,7 +2451,7 @@ while( <VCF> ){
 
 				if (defined $hideACMG){
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} = "ACMG warning\n\n";	
-                    $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  '#FFFFFF' ;
+					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  '#FFFFFF' ;
 				}else{
 					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= " ACMG";
 					$tagsHash{'ACMG'}{'count'} ++;
@@ -2493,33 +2502,33 @@ while( <VCF> ){
 
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'commentpLI'} .=  "LOEUF = ".$dicoInfo{'oe_lof_upper.'.$refGene}."\nLOEUF_decile = ".$dicoInfo{'oe_lof_upper_bin.'.$refGene}."\n\noe_lof = ".$dicoInfo{'oe_lof.'.$refGene}."\noe_lof_lower = ".$dicoInfo{'oe_lof_lower.'.$refGene} ."\n\n";
 
-            if( $dicoInfo{'oe_lof_upper_bin.'.$refGene} =~ /;/){
+			if( $dicoInfo{'oe_lof_upper_bin.'.$refGene} =~ /;/){
 
-                my @tweenBin = split( ';', $dicoInfo{'oe_lof_upper_bin.'.$refGene}   );
+				my @tweenBin = split( ';', $dicoInfo{'oe_lof_upper_bin.'.$refGene}   );
 
-                if ($tweenBin[1] eq "." && $tweenBin[0] ne "."){
-			        $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$tweenBin[0]} ;
-                }elsif($tweenBin[0] eq "." && $tweenBin[1] ne "."){
+				if ($tweenBin[1] eq "." && $tweenBin[0] ne "."){
+					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$tweenBin[0]} ;
+				}elsif($tweenBin[0] eq "." && $tweenBin[1] ne "."){
 
-			        $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$tweenBin[1]} ;
-                }elsif($tweenBin[0] eq "." && $tweenBin[1] eq "."){
-                    $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  '#FFFFFF' ;
+					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$tweenBin[1]} ;
+				}elsif($tweenBin[0] eq "." && $tweenBin[1] eq "."){
+					$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  '#FFFFFF' ;
 
-                }elsif($tweenBin[0] >= $tweenBin[1]){
-                     $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$tweenBin[1]} ;
-                }else{
-                     $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$tweenBin[0]} ;
-                }
+				}elsif($tweenBin[0] >= $tweenBin[1]){
+					 $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$tweenBin[1]} ;
+				}else{
+					 $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$tweenBin[0]} ;
+				}
 
-            }else{
+			}else{
 
 			#$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  sprintf('#%2.2X%2.2X%2.2X',($dicoInfo{'pLi.'.$refGene}*255 + $dicoInfo{'pRec.'.$refGene}*255),($dicoInfo{'pRec.'.$refGene}*255 + $dicoInfo{'pNull.'.$refGene} * 255),0) ;
 
-			    $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$dicoInfo{'oe_lof_upper_bin.'.$refGene}} ;
+				$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'} =  $dicoLOEUFformatColor{$dicoInfo{'oe_lof_upper_bin.'.$refGene}} ;
 
-            }
+			}
 
-            #add color format
+			#add color format
 			$format_pLI = $workbook->add_format(bg_color => $hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'colorpLI'});
 
 
@@ -2702,19 +2711,19 @@ var filter;
 
 
 	\$('#table thead tr').clone(true).appendTo( '#table thead' );
-            \$('#table thead tr:eq(1) th').each( function (i) {
-             var title = \$(this).text();
+			\$('#table thead tr:eq(1) th').each( function (i) {
+			 var title = \$(this).text();
 				\$(this).html( '<input type=\"text\" placeholder=\"Search\" />' );
 				\$(this).removeClass('rotate').off('click');
-              \$( 'input', this ).on( 'keyup change', function () {
-                  if ( table.column(i).search() !== this.value ) {
-                        table
-                       .column(i)
-                       .search( this.value )
-                       .draw();
-                  }
-            } );
-        } );
+			  \$( 'input', this ).on( 'keyup change', function () {
+				  if ( table.column(i).search() !== this.value ) {
+						table
+					   .column(i)
+					   .search( this.value )
+					   .draw();
+				  }
+			} );
+		} );
 
 
 
@@ -2788,42 +2797,42 @@ filter = function  (evt, cat) {
 
 
 /* Style the tab */
-        .tab {
-                overflow: hidden;
-                border: 1px solid #ccc;
-                background-color: #f1f1f1;
-                left: 0;
-                bottom: 0;
-                position: fixed;
-                position: -webkit-sticky;
-                position: sticky;
-                }
+		.tab {
+				overflow: hidden;
+				border: 1px solid #ccc;
+				background-color: #f1f1f1;
+				left: 0;
+				bottom: 0;
+				position: fixed;
+				position: -webkit-sticky;
+				position: sticky;
+				}
 
 /* Style the buttons inside the tab */
-        .tab input {
-                background-color: inherit;
-                float: left;
-                border: none;
-                outline: none;
-                cursor: pointer;
-                padding: 14px 16px;
-                transition: 0.3s;
-                font-size: 17px;
-                }
+		.tab input {
+				background-color: inherit;
+				float: left;
+				border: none;
+				outline: none;
+				cursor: pointer;
+				padding: 14px 16px;
+				transition: 0.3s;
+				font-size: 17px;
+				}
 /* Change background color of buttons on hover */
-        .tab input:hover {
-                background-color: #ddd;
-                }
+		.tab input:hover {
+				background-color: #ddd;
+				}
 
 
 
 /* Create an active/current tablink class */
-        .tab input.active {
-                background-color: #ccc;
-                }
-/*        .tab input:focus {
-                background-color: #ccc;
-                }*/
+		.tab input.active {
+				background-color: #ccc;
+				}
+/*		.tab input:focus {
+				background-color: #ccc;
+				}*/
 		#ALL tbody tr.favorite{
 			background-color: goldenrod;
 		}
@@ -2849,9 +2858,9 @@ filter = function  (evt, cat) {
 		}
 
 /*rotate header*/
-        thead input {
-                width: 100%;
-                }
+		thead input {
+				width: 100%;
+				}
 		th.rotate {
 			height: 150px;
 			white-space: nowrap;
@@ -2876,51 +2885,51 @@ filter = function  (evt, cat) {
 		}
 
 /* Style the tab content */
-        .tabcontent {
-                visibility: visible;
-                padding: 6px 12px;
-                /*border: 1px solid #ccc;*/
-                border-top: none;
-                }
+		.tabcontent {
+				visibility: visible;
+				padding: 6px 12px;
+				/*border: 1px solid #ccc;*/
+				border-top: none;
+				}
 
 /* Style the tooltip div */
 
-        .tooltip {
-                position: relative;
-                display: inline-block;
-                /*border-bottom: 1px dotted black;*/
-                max-width: 120px;
-                word-wrap: break-word;
-                }
+		.tooltip {
+				position: relative;
+				display: inline-block;
+				/*border-bottom: 1px dotted black;*/
+				max-width: 120px;
+				word-wrap: break-word;
+				}
 
-        .tooltip .tooltiptext {
-                visibility: hidden;
-                width: auto;
-                min-width: 300px;
-                max-width: 600px;
-                height: auto;
-                background-color: #555;
-                color: #fff;
-                text-align: left;
-                border-radius: 6px;
-                padding: 5px 0;
-                position: absolute;
-                z-index: 1;
-                top: 100%;
-                left: 20%;
-                margin-left: -20px;
-                opacity: 0;
-                transition: opacity 0.3s;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: pre-line;
-                overflow-wrap: break-word;
-                }
+		.tooltip .tooltiptext {
+				visibility: hidden;
+				width: auto;
+				min-width: 300px;
+				max-width: 600px;
+				height: auto;
+				background-color: #555;
+				color: #fff;
+				text-align: left;
+				border-radius: 6px;
+				padding: 5px 0;
+				position: absolute;
+				z-index: 1;
+				top: 100%;
+				left: 20%;
+				margin-left: -20px;
+				opacity: 0;
+				transition: opacity 0.3s;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: pre-line;
+				overflow-wrap: break-word;
+				}
 
-        .tooltip:hover .tooltiptext {
-                visibility: visible;
-                opacity: 1;
-                }
+		.tooltip:hover .tooltiptext {
+				visibility: visible;
+				opacity: 1;
+				}
 
 
 
@@ -3280,36 +3289,60 @@ $worksheetOMIMREC->autofilter('A1:AZ'.$worksheetLineOMIMREC); # Add autofilter u
 
 my $metadataLine = 1;
 
+my $dadRatio = 0;
+my $dadPoolRatio = 0;
+my $mumRatio = 0;
+my $mumPoolRatio = 0;
+
 if(defined $trio){
 
 	$worksheetHTZcompo->autofilter('A1:AZ'.$worksheetLineHTZcompo); # Add autofilter
 	$worksheetSNPdadVsCNVmum->autofilter('A1:AZ'.$worksheetLineSNPdadVsCNVmum); # Add autofilter
 
-
-	#approximative correction of pooled dad and mum number variant by 4 (pool of 4)  
-	if (defined $hashPooledSamples{$dad} && defined $hashPooledSamples{$mum}){
-		$dadVariant = $dadVariant/4;
-		$mumVariant = $mumVariant/4;
-	}
-
 	#check inheritance consistency and add to METADATA : log(transmis/nontransmis) between -0.13 and 0.1
  	if ( $dadVariant > 0 && $mumVariant > 0 && $caseDadVariant > 0 && $caseMumVariant > 0){
 
-		if ( log($caseDadVariant/$dadVariant) / log(10) < 0.1 && log($caseDadVariant/$dadVariant) / log(10) > -0.13  ){
-			$worksheetMETA->write($metadataLine , 0, "Dad status : OK (log10(".$caseDadVariant."/".$dadVariant.") is in the range -0.13 to 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
-		}else{
-			$worksheetMETA->write($metadataLine , 0, "Dad status : BAD (log10(".$caseDadVariant."/".$dadVariant.") is out of range -0.13 to 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
-		}
+	
+		#approximative correction of pooled dad and mum number variant by 4 (pool of 4)  
+		$dadRatio = log($caseDadVariant/$dadVariant) / log(10); 
+		$dadPoolRatio = log($caseDadVariant/($dadVariant/4)) / log(10);
 
+		$mumRatio = log($caseMumVariant/$mumVariant) / log(10); 
+		$mumPoolRatio = log($caseMumVariant/($mumVariant/4)) / log(10);
+
+		#dad
+		if (  -0.13 < $dadRatio && $dadRatio <= 0.1  ){
+			$worksheetMETA->write($metadataLine , 0, "Dad status : OK ".substr($dadRatio,0,6)."\t [log10(".$caseDadVariant."/".$dadVariant.") is in the range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+		}else{
+			$worksheetMETA->write($metadataLine , 0, "Dad status : BAD ".substr($dadRatio,0,6)."\t [log10(".$caseDadVariant."/".$dadVariant.") is out of range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+		}
+		$metadataLine ++;
+	
+		if (  -0.05 <= $dadPoolRatio && $dadPoolRatio <= 0.2  ){
+			$worksheetMETA->write($metadataLine , 0, "Dad Pool status : OK ".substr($dadPoolRatio,0,6)."\t [log10(".$caseDadVariant."/(".$dadVariant."/4)) is in the range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+		}else{
+			$worksheetMETA->write($metadataLine , 0, "Dad Pool status : BAD ". substr($dadPoolRatio,0,6)."\t [log10(".$caseDadVariant."/(".$dadVariant."/4)) is out of range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+		}
+		$metadataLine ++;
 		$metadataLine ++;
 
-		if ( log($caseMumVariant/$mumVariant) / log(10) < 0.1  && log($caseMumVariant/$mumVariant) / log(10) > -0.13 ){
-			$worksheetMETA->write($metadataLine , 0, "Mum status : OK (log10(".$caseMumVariant."/".$mumVariant.") is in the range -0.13 to 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
-		}else{
-			$worksheetMETA->write($metadataLine , 0, "Mum status : BAD (log10(".$caseMumVariant."/".$mumVariant.") is out of range -0.13 to 0.1), Inherited Heterozygous variants Ratio tends toward 0." );
-		}
 
+		#mum
+		if (  -0.13 < $mumRatio && $mumRatio <= 0.1  ){
+			$worksheetMETA->write($metadataLine , 0, "Mum status : OK ".substr($mumRatio,0,6)."\t [log10(".$caseMumVariant."/".$mumVariant.") is in the range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+		}else{
+			$worksheetMETA->write($metadataLine , 0, "Mum status : BAD ". substr($mumRatio,0,6)."\t [log10(".$caseMumVariant."/".$mumVariant.") is out of range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+		}
 		$metadataLine ++;
+	
+		if (  -0.05 <= $mumPoolRatio && $mumPoolRatio <= 0.2  ){
+			$worksheetMETA->write($metadataLine , 0, "Mum Pool status : OK ".substr($mumPoolRatio,0,6)."\t [log10(".$caseMumVariant."/(".$mumVariant."/4)) is in the range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+		}else{
+			$worksheetMETA->write($metadataLine , 0, "Mum Pool status : BAD ".substr($mumPoolRatio,0,6)."\t [log10(".$caseMumVariant."/(".$mumVariant."/4)) is out of range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+		}
+		$metadataLine ++;
+		$metadataLine ++;
+
 	}
 
 }
@@ -3455,7 +3488,7 @@ if ($poorCoverage_File ne "" &&  $genemap2_File ne ""  ){
 		if ($poorCoverage_Line=~/^#/){
 			push @poorCoverage_List, "OMIM";
    			push @poorCoverage_List, "CANDIDATE";
-      
+	  
 		}else{
 
 			#add OMIM phenotypes if exists => Assuming that gene name is in 4th column of poor coverage
@@ -3463,14 +3496,14 @@ if ($poorCoverage_File ne "" &&  $genemap2_File ne ""  ){
 				push @poorCoverage_List, $genemap2_variant{$poorCoverage_List[3]} ;
 			}else{
    				push @poorCoverage_List, "." ;
-      			}
+	  			}
 			
    			#add CANDIDATES TAG if exists => Assuming that gene name is in 4th column of poor coverage
    			if($candidates ne ""){
 			
 				if (defined $candidateGene{$poorCoverage_List[3]} ){
 					
-     					$candidateGene{$poorCoverage_List[3]}=~ s/CANDID_//g ;
+	 					$candidateGene{$poorCoverage_List[3]}=~ s/CANDID_//g ;
 					push @poorCoverage_List,  $candidateGene{$poorCoverage_List[3]} ;
 
 				}else{
@@ -3584,7 +3617,7 @@ sub writeThisSheet {
 
 			if ($hashTemp{'commentpLI'} ne "."){
 
-        		$format_pLI = $workbook->add_format(bg_color => $hashTemp{'colorpLI'});
+				$format_pLI = $workbook->add_format(bg_color => $hashTemp{'colorpLI'});
 
 
 				$worksheet->write( $worksheetLine,$hashColumn{'Gene.'.$refGene}, $hashTemp{'finalArray'}[$hashColumn{'Gene.'.$refGene}]     ,$format_pLI );
