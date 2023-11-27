@@ -2220,21 +2220,19 @@ while( <VCF> ){
 		#Penalize (or do next) if index case is 0/0 or parents are 1/1 and not affected. We should treat further all affected genotypes like this (!= 0/0)
 		if (defined $trio){
 			
-			# exclude chromosome X variants due to mother/son unbalance
+			if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
+    				# exclude chromosome X variants due to mother/son unbalance
+				if ($line[0]!~/X/){
+					switch ($familyGenotype){
+						#Check if case/dad and case/mum  inheritance are  consistent
+						case /^_0\/0_0\/1_0\/0_/ {$dadVariant ++ ;}
+						case /^_0\/0_0\/0_0\/1_/ {$mumVariant ++ ;}
+					}
+      				}
+				next;
+			}
+    			# exclude chromosome X variants due to mother/son unbalance
 			if ($line[0]!~/X/){
-
-				if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
-    					# exclude chromosome X variants due to mother/son unbalance
-					if ($line[0]!~/X/){
-						switch ($familyGenotype){
-							#Check if case/dad and case/mum  inheritance are  consistent
-							case /^_0\/0_0\/1_0\/0_/ {$dadVariant ++ ;}
-							case /^_0\/0_0\/0_0\/1_/ {$mumVariant ++ ;}
-						}
-      					}
-						next;
-				}
-
 				switch ($familyGenotype){
 					#Check if case/dad and case/mum  inheritance are  consistent
 					case /^_0\/0_0\/1_0\/0_/ {$dadVariant ++ ;}
@@ -2243,7 +2241,8 @@ while( <VCF> ){
 					case /^_0\/1_0\/0_0\/1_/ {$caseMumVariant ++;}
 
 				}
-			
+    			}
+
 			if ($finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0" or (! defined $hashAffected{$dad} and $finalSortData[$dicoColumnNbr{"Genotype-".$dad}] eq "1/1") or (! defined $hashAffected{$mum} and $finalSortData[$dicoColumnNbr{"Genotype-".$mum}] eq "1/1") ){
 				$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
 			}
