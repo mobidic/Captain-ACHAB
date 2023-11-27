@@ -57,7 +57,7 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder, default build is hg19, but vcf header is parsed to check if hg38 and correct url ) >
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.15";
+my $versionOut = "achab version www:1.0.16";
 
 #################################### VARIABLES INIT ########################
 
