@@ -2,7 +2,7 @@
 
 ##### wwwachab.pl ####
 
-# Author : Thomas Guignard 2023
+# Author : Thomas Guignard 2024 and beyond
 
 # Description :
 # Create an User friendly Excel file from an MPA annotated VCF file.
@@ -55,9 +55,11 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD_Genome comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
 \n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) > 
 \n--MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder, default build is hg19, but vcf header is parsed to check if hg38 and correct url ) >
+\n--gnomAD_nhomalt < File containing gnomAD nhomalt values (number of homozygous indivisduals), values are added to gnomAD comments tabulated format=  chr,pos,ref,alt,nb_homozygous_individuals,allele number >
+\n--maxCohortGT < In cohort/strangers mode (no trio, no affected), integer max number of individuals that share the same genotype (defaut = 1) >
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.16";
+my $versionOut = "achab version www:1.0.17";
 
 #################################### VARIABLES INIT ########################
 
@@ -111,6 +113,12 @@ my $customVCF_File = "";
 my $customVCF_Line;
 my @customVCF_List;
 my %customVCF_variant;
+
+my $gnomAD_nhomalt_File = "";
+my $gnomAD_nhomalt_Line;
+my @gnomAD_nhomalt_List;
+my %gnomAD_nhomalt_variant;
+
 #threshold to filter out bias related frequent variants
 my $filterCustomVCF = "";
 my $filterCustomVCFRegex = "";
@@ -215,6 +223,8 @@ my $md_line = "";
 my $franklinURL = "https://franklin.genoox.com/clinical-db/variant/snp/";
 my $build = "hg19";
 
+my $maxCohortGT = ""; 
+
 #$arguments = GetOptions( "vcf=s" => \$incfile ) or pod2usage(-vcf => "$0: argument required\n") ;
 
 GetOptions( 	"vcf=s"				=> \$incfile,
@@ -234,26 +244,28 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"mozaicRate:s"			=> \$mozaicRate,
 		"mozaicDP:s"			=> \$mozaicDP,
 		"newHope"			=> \$newHope,
-		"favouriteGeneRef:s"			=> \$favouriteGeneRef,
-		"affected:s"		=> \$affected,
-		"filterCustomVCF:s"			=> \$filterCustomVCF,
-		"filterCustomVCFRegex:s"	=>	\$filterCustomVCFRegex,
-		"addCustomVCFRegex"	=>	\$addCustomVCFRegex,
-		"pooledSamples:s"	=>	\$pooledSamples,
-		"IDSNP:s"	=>	\$IDSNP,
+		"favouriteGeneRef:s"		=> \$favouriteGeneRef,
+		"affected:s"			=> \$affected,
+		"filterCustomVCF:s"		=> \$filterCustomVCF,
+		"filterCustomVCFRegex:s"	=> \$filterCustomVCFRegex,
+		"addCustomVCFRegex"		=> \$addCustomVCFRegex,
+		"pooledSamples:s"		=> \$pooledSamples,
+		"IDSNP:s"			=> \$IDSNP,
 		"sampleSubset:s"		=> \$sampleSubset,
-		"addCaseDepth"		=> \$addCaseDepth,
-		"addCaseAB"		=> \$addCaseAB,
-		"intersectVCF:s"	=> \$intersectVCF_File,
-		"poorCoverageFile:s"	=> \$poorCoverage_File,
-		"genemap2File:s"	=> \$genemap2_File,
-		"skipCaseWT"		=> \$skipCaseWT,
-		"hideACMG"		=> \$hideACMG,
-		"gnomadGenome:s"	=> \$gnomadGenome_names,
-		"gnomadExome:s"	=> \$gnomadExome_names,
-		"MDAPIkey:s"	=> \$mdAPIkey,
+		"addCaseDepth"			=> \$addCaseDepth,
+		"addCaseAB"			=> \$addCaseAB,
+		"intersectVCF:s"		=> \$intersectVCF_File,
+		"poorCoverageFile:s"		=> \$poorCoverage_File,
+		"genemap2File:s"		=> \$genemap2_File,
+		"skipCaseWT"			=> \$skipCaseWT,
+		"hideACMG"			=> \$hideACMG,
+		"gnomadGenome:s"		=> \$gnomadGenome_names,
+		"gnomadExome:s"			=> \$gnomadExome_names,
+		"gnomAD_nhomalt:s"		=> \$gnomAD_nhomalt_File,
+		"MDAPIkey:s"			=> \$mdAPIkey,
+		"maxCohortGT:s"			=> \$maxCohortGT,
 		"help|h"			=> \$help,
-		"version|v"   => \$version);
+		"version|v"   			=> \$version);
 
 
 
@@ -281,6 +293,14 @@ if($outPrefix ne ""){
 #define popFreqThr
 if( $popFreqThr eq ""){
 	$popFreqThr = 0.01;
+}
+
+#define maxCohortGT
+if( $maxCohortGT eq ""){
+	$maxCohortGT = 2;
+}else{
+	#add 1 to the integer to set the threshold
+	$maxCohortGT++;
 }
 
 #define filter List
@@ -761,6 +781,40 @@ if($customVCF_File ne ""){
 if ($filterCustomVCFRegex eq ""){
 	$filterCustomVCFRegex = "found=";
 }else{chomp $filterCustomVCFRegex ;}
+
+
+#gnomAD nhomalt treatment : number of homozygous (format chr \t start \t end \t ref \t alt \t nb homozygous individuals \t allele number
+if($gnomAD_nhomalt_File ne ""){
+
+	open(NHOMALT , "<$gnomAD_nhomalt_File") or die("Cannot open gnomAD_nhomalt file ".$gnomAD_nhomalt_File) ;
+	print  STDERR "Processing gnomAD_nhomalt file ... \n" ;
+	while( <NHOMALT> ){
+
+  		$gnomAD_nhomalt_Line = $_;
+
+#############################################
+##############   skip header
+		next if ($gnomAD_nhomalt_Line=~/^#/);
+
+		chomp $gnomAD_nhomalt_Line;
+		@gnomAD_nhomalt_List = split( /\t/, $gnomAD_nhomalt_Line );
+
+		#build variant key as CHROM_POS_REF_ALT
+
+		if (defined $gnomAD_nhomalt_variant{$gnomAD_nhomalt_List[0]."_".$gnomAD_nhomalt_List[1]."_".$gnomAD_nhomalt_List[2]."_".$gnomAD_nhomalt_List[3]}){
+
+			$gnomAD_nhomalt_variant{$gnomAD_nhomalt_List[0]."_".$gnomAD_nhomalt_List[1]."_".$gnomAD_nhomalt_List[2]."_".$gnomAD_nhomalt_List[3]} .= ";".$gnomAD_nhomalt_List[4]."/".$gnomAD_nhomalt_List[5];
+
+		}else{
+
+			$gnomAD_nhomalt_variant{$gnomAD_nhomalt_List[0]."_".$gnomAD_nhomalt_List[1]."_".$gnomAD_nhomalt_List[2]."_".$gnomAD_nhomalt_List[3]} = $gnomAD_nhomalt_List[4]."/".$gnomAD_nhomalt_List[5];
+		}
+	}
+
+	close(NHOMALT);
+}
+
+
 
 # intersect VCF treatment
 if($intersectVCF_File ne ""){
@@ -1502,6 +1556,7 @@ while( <VCF> ){
 		# add ID and FILTER to the dicoInfo
 		$dicoInfo{'ID'} = $line[2];
 		$dicoInfo{'FILTER'} = $line[6];
+		$dicoInfo{'QUAL'} = $line[5];
 
 
 #DEBUG
@@ -1972,6 +2027,21 @@ while( <VCF> ){
 			}
 		}
 
+
+		#CHECK IF variant is in gnomad_nhomalt
+		if($gnomAD_nhomalt_File ne ""){
+
+			if( defined $gnomAD_nhomalt_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}){
+				$commentGnomADGenomeScore .= "gnomAD_nhomalt\t= ".$gnomAD_nhomalt_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]} ."\n";
+				$commentGnomADExomeScore .= "gnomAD_nhomalt\t= ".$gnomAD_nhomalt_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]} ."\n";
+			}else{
+				$commentGnomADGenomeScore .= "gnomAD_nhomalt\t=.\n";
+				$commentGnomADExomeScore .= "gnomAD_nhomalt\t=.\n";
+			}
+		}
+
+
+
 		#CHECK IF variant is in intersectVCF
 		if($intersectVCF_File ne ""){
 
@@ -2184,17 +2254,23 @@ while( <VCF> ){
 					$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
 				}
 				
-				# add depth (DP) of the Case in supplementary column
-				if (defined $addCaseDepth && $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
-					$finalSortData[$dicoColumnNbr{'Case Depth'}] = $DP;
+
+				if ($dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
+					# add depth (DP) of the Case in supplementary column
+					if (defined $addCaseDepth){
+						$finalSortData[$dicoColumnNbr{'Case Depth'}] = $DP;
+					}
+					# add Allelic balance (AB) of the Case in supplementary column
+					if (defined $addCaseAB){
+						$finalSortData[$dicoColumnNbr{'Case AB'}] = $AB;
+					}
+					# add GQ genotype quality of the Case in finalSortData
+					if (defined $dicoColumnNbr{'GQ'} && defined $genotype[$formatIndex{'GQ'}] ){
+						$finalSortData[$dicoColumnNbr{'GQ'}] = $genotype[$formatIndex{'GQ'}];
+					}
 
 				}
-
-				# add Allelic balance (AB) of the Case in supplementary column
-				if (defined $addCaseAB && $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
-					$finalSortData[$dicoColumnNbr{'Case AB'}] = $AB;
-
-				}
+				
 
 				$finalSortData[$dicoColumnNbr{$dicoSamples{$finalcol}{'columnName'}}] = $genotype[$formatIndex{'GT'}];
 				#concatenate sample genotype to build family genotype
@@ -2383,18 +2459,18 @@ while( <VCF> ){
 
 		}else{  #END OF AFFECTED
 
-			#Stranger Mode
+			#Stranger Mode / Cohort
 			@strangerNULL = $familyGenotype =~ m/\.\/\./g;
 			@strangerREF = $familyGenotype =~ m/0\/0/g;
 			@strangerHTZ = $familyGenotype =~ m/0\/1/g;
 			@strangerHMZ = $familyGenotype =~ m/1\/1/g;
 
-			if (scalar @strangerHTZ > 0 && scalar @strangerHTZ < 2 && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHTZ == $cmpt)){
+			if (scalar @strangerHTZ > 0 && scalar @strangerHTZ < $maxCohortGT && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHTZ == $cmpt)){
 				$worksheetTAG .= " DENOVO";$tagsHash{'DENOVO'}{'count'} ++;
 				#$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'worksheet'} .= "#DENOVO";
-			}elsif (scalar @strangerHMZ > 0 && scalar @strangerHMZ < 2 && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHTZ + scalar @strangerHMZ == $cmpt)){
+			}elsif (scalar @strangerHMZ > 0 && scalar @strangerHMZ < $maxCohortGT && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHTZ + scalar @strangerHMZ == $cmpt)){
 				$worksheetTAG .= " AUTOREC";$tagsHash{'AUTOREC'}{'count'} ++;
-			}elsif (scalar @strangerHMZ > 0 && scalar @strangerHMZ < 2 && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHMZ == $cmpt)){
+			}elsif (scalar @strangerHMZ > 0 && scalar @strangerHMZ < $maxCohortGT && (scalar @strangerNULL + scalar @strangerREF + scalar @strangerHMZ == $cmpt)){
 				$worksheetTAG .= " SNPmCNVp";$tagsHash{'SNPmCNVp'}{'count'} ++;
 			}
 
