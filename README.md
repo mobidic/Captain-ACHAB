@@ -212,6 +212,8 @@ Command line to use Captain ACHAB
                         --gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) >
                         --hideACMG (ACMG tab will be empty but information will be reported in the gene comment)
                         --MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder, default build is hg19, but vcf header is parsed to check if hg38 and correct url ) >
+                        --gnomAD_nhomalt < File containing gnomAD nhomalt values (number of homozygous individuals), values are added to gnomAD comments tabulated format=  chr,pos,ref,alt,nb_homozygous_individuals,allele number >
+                        --maxCohortGT < In cohort/strangers mode (no trio, no affected), integer max number of individuals that share the same genotype (defaut = 1) >
                         --help (print this command usage)
 
 
@@ -219,6 +221,19 @@ Command line to use Captain ACHAB
 ```
 
 ## Troubleshooting
+
+### Get gnomAD number of homozygous and annotate with.
+
+```bash
+#get tool to unzip bigbed file
+wget https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigBedToBed
+# get nhomalt files
+wget https://hgdownload.soe.ucsc.edu/gbdb/hg19/gnomAD/variants/v2.1.1.exomes.bb
+#unzip
+./bigBedToBed v2.1.1.exomes.bb v2.1.1.exomes.bed
+#parse and keep nhomalt > 0
+awk -F "\t" 'BEGIN{OFS="\t";print "#chr\tpos\tref\talt\tnhomalt\tnAllele"}{if ($17 == 0){next};print $1,$(NF-2),$10,$11,$17,$13}' v2.1.1.exomes.bed > v2.1.1.exomes_nhomalt0.bed
+```
 
 ### Clean VCF if Platypus caller is used.
 
@@ -250,23 +265,11 @@ Contig is necessary in VCF header.
 ### Create db.vcf input for Captain Achab
 If you doesn't have database of your variant, you can create a db.vcf with all of your vcfs and Captain ACHAB will tell you how many times the variants are found & in which sample.
 
-Put all your vcf in one folder.
-Use GATK Combine Variant to merge all VCF.
-
-Create a vcfmerge.sh file :
-```bash
-java -jar GenomeAnalysisTK.jar -T CombineVariants -R hg19.fa -o all.vcf -genotypeMergeOptions UNIQUIFY -minN 2 \ 
-```
-Add to the script all VCF :
-```bash
-for i in *.vcf; do echo --variant $i \\ >> vcfmerge.sh ; done
-```
-Run vcfmerge.sh. 
 Multiallelic lines from vcf have to be split before sample counting. 
 
-Then run the vcf_sample_counter_merger.sh script with positionnal arguments and you'll get a *db.vcf*. Alternately, you can also give all your normalized vcf files to merge/count as arguments.  
+Run the vcf_sample_counter_merger.pl script with positionnal arguments and you'll get a *db.vcf*. Alternately, you can also give all your normalized vcf files to merge/count as arguments.  
 ```bash
-./vcf_sample_counter_merger.sh outputFileName.vcf  VCF1.vcf VCF2.vcf VCF3.vcf VCF4.vcf VCF5.vcf ......
+perl vcf_sample_counter_merger.pl outputFileName.vcf  VCF1.vcf VCF2.vcf VCF3.vcf VCF4.vcf VCF5.vcf ......
 ```
 #### Optional : 
 If needed, you can "clean" the all.vcf with this command :
