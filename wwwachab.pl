@@ -59,7 +59,10 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--maxCohortGT < In cohort/strangers mode (no trio, no affected), integer max number of individuals that share the same genotype (defaut = 1) >
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.17";
+my $versionOut = "achab version www:1.0.18";
+
+
+#\n--GOFpredFile <precomputed GOF prediction File from https://itanlab.shinyapps.io/goflof/  (with a 'CHROM POS REF ALT' tab format) >
 
 #################################### VARIABLES INIT ########################
 
@@ -136,6 +139,7 @@ my @geneListTemp;
 my @geneList;
 my $mozaicSamples = "";
 my $count = 0;
+my $rescueDENOVO = 0; 
 
 #Data structure
 my @finalSortData;
@@ -202,6 +206,13 @@ my $gnomadExome_names = "";
 my @gnomadExome_List;
 my $gnomadExomeColumn = "gnomAD_exome_ALL";
 
+#check GOF prediction
+#my $GOFpred_File = "";
+#my $GOFpred_Line;
+#my @GOFpred_List;
+#my %GOFpred_variant;
+#my %GOFpred_position;
+
 my $hideACMG;
 
 # METADATA
@@ -264,6 +275,7 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"gnomAD_nhomalt:s"		=> \$gnomAD_nhomalt_File,
 		"MDAPIkey:s"			=> \$mdAPIkey,
 		"maxCohortGT:s"			=> \$maxCohortGT,
+		#"GOFpredFile:s"			=> \$GOFpred_File,
 		"help|h"			=> \$help,
 		"version|v"   			=> \$version);
 
@@ -815,6 +827,59 @@ if($gnomAD_nhomalt_File ne ""){
 }
 
 
+#GOF prediction File
+#if($GOFpred_File ne "" , "<$GOFpred_File") or die("Cannot open GOF prediction file ".$GOFpred_File) ;
+#	print  STDERR "Processing GOF prediction file ... \n" ;
+#
+#	my $current_chr = "";
+#	my @current_array; 
+#
+#	while( <GOFPRED> ){
+#
+#  		$GOFpred_Line = $_;
+#
+#############################################
+##############   skip header
+#		next if ($GOFpred_Line=~/^#/);
+#
+#		chomp $GOFpred_Line;
+#		@GOFpred_List = split( /\t/, $GOFpred_Line );
+#
+#		#replace "spaces" by "_"
+#		$GOFpred_List[15] = substr($GOFpred_List[15], 0, 4);
+#		
+#		#build position hash with chr as key and position-array as value	
+#		%GOFpred_position;
+#		if (defined $GOFpred_position{$GOFpred_List[0]}){
+#
+#			#$GOFpred_variant{$GOFpred_List[4]} .= ";".$GOFpred_List[15];
+#
+#		}else{
+#			
+#			$GOFpred_position{$GOFpred_List[0]} = $GOFpred_List[1];
+#			$GOFpred_position{$current_chr} = @current_array;
+#			$current_chr = $GOFpred_List[0];
+#
+#
+#		}
+#
+#		#build variant key as CHROM_POS_REF_ALT
+#
+#		if (defined $GOFpred_variant{$GOFpred_List[4]}){
+#
+#			$GOFpred_variant{$GOFpred_List[4]} .= ";".$GOFpred_List[15];
+#
+#		}else{
+#
+#			$GOFpred_variant{$GOFpred_List[4]} = $GOFpred_List[15];
+#		}
+#	}
+#	
+#	#treat last chr	
+#	$GOFpred_position{$current_chr} = @current_array;
+#
+#	close(GOFPRED);
+#}
 
 # intersect VCF treatment
 if($intersectVCF_File ne ""){
@@ -1213,6 +1278,12 @@ if($customVCF_File ne ""){
 	$lastColumn++;
 }
 
+#gnomAD_nhomalt in last position
+if($gnomAD_nhomalt_File ne ""){
+	$dicoColumnNbr{'nhomalt'} = $lastColumn ;
+	$lastColumn++;
+}
+
 
 #intersect VCF in last position
 if($intersectVCF_File ne ""){
@@ -1518,6 +1589,8 @@ while( <VCF> ){
 		my $alt="";
 		my $ref="";
 
+		$rescueDENOVO=0;
+
 		#Split line with tab
 
 		#DEBUG		print $current_line,"\n";
@@ -1591,10 +1664,14 @@ while( <VCF> ){
 
 		}
 
-
-		#select only x% pop freq
-		#Use pop freq threshold as an input parameter (default = 1%)
-		next if(( $dicoInfo{$gnomadGenomeColumn} ne ".") && ($dicoInfo{$gnomadGenomeColumn} > $popFreqThr));
+		#TODO keep clinvar patho variant 
+		#if ( $dicoInfo{'MPA_ranking'} == 1){
+			#don't skip, just penalize further
+		#}else {
+			#select only x% pop freq
+			#Use pop freq threshold as an input parameter (default = 1%)
+			next if(( $dicoInfo{$gnomadGenomeColumn} ne ".") && ($dicoInfo{$gnomadGenomeColumn} > $popFreqThr));
+		#}
 
 		#convert gnomad freq "." to zero
 		if( $dicoInfo{$gnomadGenomeColumn} eq "."){
@@ -1612,6 +1689,7 @@ while( <VCF> ){
 			case (\@filterArray) {$filterBool=0}
 			else {$filterBool=1}
 		}
+
 
 
 		if(defined $newHope){
@@ -1656,7 +1734,7 @@ while( <VCF> ){
 			}else{
 				#check if custom INFO exists in VCF or gnomad_genome or gnomad_exome names
 				if($dicoColumnNbr{$keys} > (16+$cmpt) || $dicoColumnNbr{$keys} == 5 || $dicoColumnNbr{$keys} == 6 ){
-					$finalSortData[$dicoColumnNbr{$keys}] = "INFO not found";
+					$finalSortData[$dicoColumnNbr{$keys}] = "INFO not found in VCF";
 				}
 			}
 		}
@@ -1943,15 +2021,19 @@ while( <VCF> ){
 
 
 
-		#		GT:AD:DP:GQ:PL (haplotype caller)
+		#		GT:AD:DP:GQ:PL (GATK haplotype caller)
 		#		GT:DP:GQ  => multiallelic line , vcf not splitted => should be done before, STOP RUN?
 		#		GT:GOF:GQ:NR:NV:PL (platyplus caller)
 		#		GT:DP:RO:QR:AO:QA:GL (freebayes)
 		#		GT:DP:AF (seqNext)
+		#		GT:AD:AF:DP:F1R2:F2R1:FAD:SB (mutect2)
+		#		GT:AD:AF:DP:F1R2:F2R1:FAD:PGT:PID:PS:SB (mutect2)
 		#
 		$caller = "";
 		if(defined $formatIndex{'VAF'}){
 			$caller = "DeepVariant";
+		}elsif(defined $formatIndex{'FAD'}){
+			$caller = "mutect2";
 		}elsif(defined $formatIndex{'AD'}){
 			$caller = "GATK";
 		}elsif(defined $formatIndex{'NR'}){
@@ -2032,11 +2114,10 @@ while( <VCF> ){
 		if($gnomAD_nhomalt_File ne ""){
 
 			if( defined $gnomAD_nhomalt_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]}){
-				$commentGnomADGenomeScore .= "gnomAD_nhomalt\t= ".$gnomAD_nhomalt_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]} ."\n";
-				$commentGnomADExomeScore .= "gnomAD_nhomalt\t= ".$gnomAD_nhomalt_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]} ."\n";
+				$finalSortData[$dicoColumnNbr{'nhomalt'}] = $gnomAD_nhomalt_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]};
+				#$commentGnomADExomeScore .= "gnomAD_nhomalt\t= ".$gnomAD_nhomalt_variant{$line[0]."_".$line[1]."_".$line[3]."_".$line[4]} ."\n";
 			}else{
-				$commentGnomADGenomeScore .= "gnomAD_nhomalt\t=.\n";
-				$commentGnomADExomeScore .= "gnomAD_nhomalt\t=.\n";
+				$finalSortData[$dicoColumnNbr{'nhomalt'}] = ".";
 			}
 		}
 
@@ -2190,10 +2271,15 @@ while( <VCF> ){
 				#DEBUG print STDERR "indexSample\t".$dicoSamples{$finalcol}{'columnIndex'}."\n";
 
 				#put the genotype and comments info into string
-				#convert "1/0" genotype to "0/1" format
-				if($genotype[$formatIndex{'GT'}] eq "1/0"){
+				#transform stranges genotype into 0/1  : like 1/0 , 0/0/0/0/1/0 , 0|1 , 1|0, 0/1/0 etc....
+				if($genotype[$formatIndex{'GT'}] =~ m/^(?=.*1)(?=.*0).+$/){
 					$genotype[$formatIndex{'GT'}] = "0/1";
 				}
+
+				#convert "1/0" genotype to "0/1" format
+				#if($genotype[$formatIndex{'GT'}] eq "1/0"){
+				#	$genotype[$formatIndex{'GT'}] = "0/1";
+				#}
 
 				#$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]."\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
 
@@ -2237,8 +2323,21 @@ while( <VCF> ){
 
 					if (defined $hashPooledSamples{substr($dicoSamples{$finalcol}{'columnName'},9,length($dicoSamples{$finalcol}{'columnName'})-9) }){
 						$mozaicSamples  .= $dicoSamples{$finalcol}{'columnName'}.";";
-						$mozaicSamples  .= 'yellow'.";";
-						$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'yellow';
+
+						#tag with color suspicious
+						if ( $adalt == 1 ){
+							$mozaicSamples  .= 'orange'.";";
+							$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'orange';
+
+							#rescueDENOVO from suspicious recomputed
+							if ( $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$dad ||  $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$mum ){
+								$rescueDENOVO ++;
+							}
+						}else{
+							$mozaicSamples  .= 'yellow'.";";
+							$hashColor{$dicoSamples{$finalcol}{'columnNbr'}} = 'yellow';
+						}
+
 						$genotype[$formatIndex{'GT'}] = "0/1";
 						$commentGenotype .=  $dicoSamples{$finalcol}{'columnName'}."\t -\t ".$genotype[$formatIndex{'GT'}]." (recomputed 0/0)\nDP = ".$DP."\t AD = ".$AD."\t AB = ".$AB."\n\n";
 						#penalize if recomputed pool
@@ -2255,6 +2354,12 @@ while( <VCF> ){
 				}
 				
 
+				#rescueDENOVO from suspicious recomputed
+				if ( $genotype[$formatIndex{'GT'}] eq "0/0" && ($dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$dad ||  $dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$mum )){
+					$rescueDENOVO ++;
+				}
+
+				#get case DP , GQ and AB
 				if ($dicoSamples{$finalcol}{'columnName'} eq "Genotype-".$case){
 					# add depth (DP) of the Case in supplementary column
 					if (defined $addCaseDepth){
@@ -2295,7 +2400,7 @@ while( <VCF> ){
 
 		#Penalize (or do next) if index case is 0/0 or parents are 1/1 and not affected. We should treat further all affected genotypes like this (!= 0/0)
 		if (defined $trio){
-			
+						
 			if (defined $skipCaseWT && $finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0"){
     				# exclude chromosome X variants due to mother/son unbalance
 				if ($line[0]!~/X/){
@@ -2319,6 +2424,7 @@ while( <VCF> ){
 				}
     			}
 
+
 			if ($finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0" or (! defined $hashAffected{$dad} and $finalSortData[$dicoColumnNbr{"Genotype-".$dad}] eq "1/1") or (! defined $hashAffected{$mum} and $finalSortData[$dicoColumnNbr{"Genotype-".$mum}] eq "1/1") ){
 				$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
 			}
@@ -2340,11 +2446,29 @@ while( <VCF> ){
 				}
 			}
 		}
+		
+
+
+
+
+		#add variant count to the rank (1/counter/100000) to get deterministic final sort 
+		$finalSortData[$dicoColumnNbr{'MPA_ranking'}] += ((1/$count)/100000);
+		
+
+
+		
 		# TODO, add elsif with a foreach loop with affected that shouldn't be 0/0 and non-affected 1/1
 
 		#
 
 		if (defined $trio){
+
+			#tag DENOVO with suscpicious recomputed dad and/or mum
+			if ( $rescueDENOVO >= 2 )   {
+				$worksheetTAG .= " DENOVO"; 
+				$tagsHash{'DENOVO'}{'count'} ++;
+			}
+
 
 			switch ($familyGenotype){		#INFO you must use this switch syntax: case m/myRegex/ with complex regex (instead of case /regex/
 
@@ -3389,16 +3513,16 @@ if(defined $trio){
 
 		#dad
 		if (  -0.13 < $dadRatio && $dadRatio <= 0.1  ){
-			$worksheetMETA->write($metadataLine , 0, "Dad status : OK ".substr($dadRatio,0,6)."\t [log10(".$caseDadVariant."/".$dadVariant.") is in the range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Parental ".$dad." status : OK ".substr($dadRatio,0,6)."\t [log10(".$caseDadVariant."/".$dadVariant.") is in the range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
 		}else{
-			$worksheetMETA->write($metadataLine , 0, "Dad status : BAD ".substr($dadRatio,0,6)."\t [log10(".$caseDadVariant."/".$dadVariant.") is out of range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Parental ".$dad." status : BAD ".substr($dadRatio,0,6)."\t [log10(".$caseDadVariant."/".$dadVariant.") is out of range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
 		}
 		$metadataLine ++;
 	
 		if (  -0.05 <= $dadPoolRatio && $dadPoolRatio <= 0.2  ){
-			$worksheetMETA->write($metadataLine , 0, "Dad Pool status : OK ".substr($dadPoolRatio,0,6)."\t [log10(".$caseDadVariant."/(".$dadVariant."/4)) is in the range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Parental ".$dad." Pool status : OK ".substr($dadPoolRatio,0,6)."\t [log10(".$caseDadVariant."/(".$dadVariant."/4)) is in the range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
 		}else{
-			$worksheetMETA->write($metadataLine , 0, "Dad Pool status : BAD ". substr($dadPoolRatio,0,6)."\t [log10(".$caseDadVariant."/(".$dadVariant."/4)) is out of range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Parental ".$dad." Pool status : BAD ". substr($dadPoolRatio,0,6)."\t [log10(".$caseDadVariant."/(".$dadVariant."/4)) is out of range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
 		}
 		$metadataLine ++;
 		$metadataLine ++;
@@ -3406,16 +3530,16 @@ if(defined $trio){
 
 		#mum
 		if (  -0.13 < $mumRatio && $mumRatio <= 0.1  ){
-			$worksheetMETA->write($metadataLine , 0, "Mum status : OK ".substr($mumRatio,0,6)."\t [log10(".$caseMumVariant."/".$mumVariant.") is in the range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Parental ".$mum." status : OK ".substr($mumRatio,0,6)."\t [log10(".$caseMumVariant."/".$mumVariant.") is in the range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
 		}else{
-			$worksheetMETA->write($metadataLine , 0, "Mum status : BAD ". substr($mumRatio,0,6)."\t [log10(".$caseMumVariant."/".$mumVariant.") is out of range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Parental ".$mum." status : BAD ". substr($mumRatio,0,6)."\t [log10(".$caseMumVariant."/".$mumVariant.") is out of range -0.13 to 0.1], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
 		}
 		$metadataLine ++;
 	
 		if (  -0.05 <= $mumPoolRatio && $mumPoolRatio <= 0.2  ){
-			$worksheetMETA->write($metadataLine , 0, "Mum Pool status : OK ".substr($mumPoolRatio,0,6)."\t [log10(".$caseMumVariant."/(".$mumVariant."/4)) is in the range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Parental ".$mum." Pool status : OK ".substr($mumPoolRatio,0,6)."\t [log10(".$caseMumVariant."/(".$mumVariant."/4)) is in the range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
 		}else{
-			$worksheetMETA->write($metadataLine , 0, "Mum Pool status : BAD ".substr($mumPoolRatio,0,6)."\t [log10(".$caseMumVariant."/(".$mumVariant."/4)) is out of range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
+			$worksheetMETA->write($metadataLine , 0, "Parental ".$mum." Pool status : BAD ".substr($mumPoolRatio,0,6)."\t [log10(".$caseMumVariant."/(".$mumVariant."/4)) is out of range -0.05 to 0.2], log10 of Inherited Heterozygous variants Ratio tends toward 0." );
 		}
 		$metadataLine ++;
 		$metadataLine ++;
@@ -3690,23 +3814,21 @@ sub writeThisSheet {
 			if ($hashTemp{'commentClinvar'} ne ""){
 				$worksheet->write_comment( $worksheetLine,$hashColumn{'CLNSIG'}, $hashTemp{'commentClinvar'} ,x_scale => 7, y_scale => 5  );
 			}
-
-
+			
 			if ($hashTemp{'commentpLI'} ne "."){
 
 				$format_pLI = $workbook->add_format(bg_color => $hashTemp{'colorpLI'});
-
-
+				
 				$worksheet->write( $worksheetLine,$hashColumn{'Gene.'.$refGene}, $hashTemp{'finalArray'}[$hashColumn{'Gene.'.$refGene}]     ,$format_pLI );
 				$worksheet->write_comment( $worksheetLine,$hashColumn{'Gene.'.$refGene},$hashTemp{'commentpLI'},x_scale => 5, y_scale => 5  );
 			}
-
+     
 			if(defined $hashTemp{'genotypeMozaic'} ){
 				my @genotypeMozaic = split (';', $hashTemp{'genotypeMozaic'} );
 				#recycling $format_pLI to color mozaic genotypes
 				$format_pLI = $workbook->add_format(bg_color => 'purple');
-
-
+				
+				
 				for( my $sampleMozaic = 0 ; $sampleMozaic < scalar @genotypeMozaic; $sampleMozaic +=2){
 				#foreach my $sampleMozaic (@genotypeMozaic){
 					$format_pLI = $workbook->add_format(bg_color => $genotypeMozaic[$sampleMozaic+1]);
