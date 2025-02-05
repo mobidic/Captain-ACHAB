@@ -56,10 +56,11 @@ my $man = "USAGE : \nperl wwwachab.pl
 \n--gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) > 
 \n--MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder, default build is hg19, but vcf header is parsed to check if hg38 and correct url ) >
 \n--gnomAD_nhomalt < File containing gnomAD nhomalt values (number of homozygous indivisduals), values are added to gnomAD comments tabulated format=  chr,pos,ref,alt,nb_homozygous_individuals,allele number >
-\n--maxCohortGT < In cohort/strangers mode (no trio, no affected), integer max number of individuals that share the same genotype (defaut = 1) >
+\n--maxCohortGT < In cohort/strangers mode (no trio, no affected), integer max number of individuals that share the same genotype (default = 1) >
+\n--penalizeAffected < Penalize ranking of case and affected with GT 0/0 , non-affected with GT 1/1 (default = don't penalize) >
 \n\n-v|--version < return version number and exit > ";
 
-my $versionOut = "achab version www:1.0.18";
+my $versionOut = "achab version www:1.0.19";
 
 
 #\n--GOFpredFile <precomputed GOF prediction File from https://itanlab.shinyapps.io/goflof/  (with a 'CHROM POS REF ALT' tab format) >
@@ -159,6 +160,7 @@ my $affected = "";    # next if affected_sample = case or dad or mum
 my @affectedArray;
 my %hashAffected;
 my @nonAffectedArray;
+my $penalizeAffected;
 
 #Variable for genotype checking
 my @strangerNULL;
@@ -275,6 +277,7 @@ GetOptions( 	"vcf=s"				=> \$incfile,
 		"gnomAD_nhomalt:s"		=> \$gnomAD_nhomalt_File,
 		"MDAPIkey:s"			=> \$mdAPIkey,
 		"maxCohortGT:s"			=> \$maxCohortGT,
+		"penalizeAffected"		=> \$penalizeAffected, 
 		#"GOFpredFile:s"			=> \$GOFpred_File,
 		"help|h"			=> \$help,
 		"version|v"   			=> \$version);
@@ -1627,7 +1630,11 @@ while( <VCF> ){
 		}
 		
 		# add ID and FILTER to the dicoInfo
-		$dicoInfo{'ID'} = $line[2];
+		# david 20240430 deal with .;rs36058755;rs397951983
+		# by experience the 1st one is the right one
+		# if ($line[2] =~ /(rs\d+)(;|$)/o) {$dicoInfo{'ID'} = $1}
+		# else {$dicoInfo{'ID'} = $line[2]}
+		$dicoInfo{'ID'} = $line[2] =~ /(rs\d+)(;|$)/o ?  $1 : $line[2];
 		$dicoInfo{'FILTER'} = $line[6];
 		$dicoInfo{'QUAL'} = $line[5];
 
@@ -1638,7 +1645,9 @@ while( <VCF> ){
 		#perform ID monitoring
 
 		if ($IDSNP ne ""){
-			if (defined $hashIDSNP{$finalSortData[$dicoColumnNbr{'ID'}]}){
+			# modif david 20240425 for --IDSNP option
+			# if (defined $hashIDSNP{$finalSortData[$dicoColumnNbr{'ID'}]}){
+			if (defined $hashIDSNP{$dicoInfo{'ID'}}){
 
 				foreach my $finalcol ( sort {$a <=> $b}  (keys %dicoSamples) ) {
 
@@ -1656,8 +1665,9 @@ while( <VCF> ){
 					}else{
 						$hashIDSNP{'samples'} .=  substr($dicoSamples{$finalcol}{'columnName'},9,length($dicoSamples{$finalcol}{'columnName'})-9) ."\t";
 					}
-					$hashIDSNP{$finalSortData[$dicoColumnNbr{'ID'}]} .= $genotype[$formatIndexID{'GT'}] ."\t";
-
+					# modif david 20240425 for --IDSNP option
+					# $hashIDSNP{$finalSortData[$dicoColumnNbr{'ID'}]} .= $genotype[$formatIndexID{'GT'}] ."\t";
+					$hashIDSNP{$dicoInfo{'ID'}} .= "\t" . $genotype[$formatIndexID{'GT'}];
 
 				}
 			}
@@ -1665,13 +1675,17 @@ while( <VCF> ){
 		}
 
 		#TODO keep clinvar patho variant 
-		#if ( $dicoInfo{'MPA_ranking'} == 1){
-			#don't skip, just penalize further
-		#}else {
+		if ( $dicoInfo{'MPA_ranking'} == 1){
+			#just penalize rank if popfreq greater than 5%
+			if (( $dicoInfo{$gnomadGenomeColumn} ne ".") && ($dicoInfo{$gnomadGenomeColumn} > 0.05)){
+				$dicoInfo{'MPA_ranking'} = 9.5;				
+			}
+
+		}else {
 			#select only x% pop freq
 			#Use pop freq threshold as an input parameter (default = 1%)
 			next if(( $dicoInfo{$gnomadGenomeColumn} ne ".") && ($dicoInfo{$gnomadGenomeColumn} > $popFreqThr));
-		#}
+		}
 
 		#convert gnomad freq "." to zero
 		if( $dicoInfo{$gnomadGenomeColumn} eq "."){
@@ -2424,29 +2438,31 @@ while( <VCF> ){
 				}
     			}
 
-
-			if ($finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0" or (! defined $hashAffected{$dad} and $finalSortData[$dicoColumnNbr{"Genotype-".$dad}] eq "1/1") or (! defined $hashAffected{$mum} and $finalSortData[$dicoColumnNbr{"Genotype-".$mum}] eq "1/1") ){
-				$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
-			}
-		}elsif (@affectedArray){
-			foreach my $AFF (@affectedArray){
-				if ($finalSortData[$dicoColumnNbr{"Genotype-".$AFF}] eq "0/0"){
+			if (defined $penalizeAffected){
+				if ($finalSortData[$dicoColumnNbr{"Genotype-".$case}] eq "0/0" or (! defined $hashAffected{$dad} and $finalSortData[$dicoColumnNbr{"Genotype-".$dad}] eq "1/1") or (! defined $hashAffected{$mum} and $finalSortData[$dicoColumnNbr{"Genotype-".$mum}] eq "1/1") ){
 					$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
-					last;
 				}
 			}
-			if ( scalar  @nonAffectedArray > 0){
-				if ($finalSortData[$dicoColumnNbr{'MPA_ranking'}]   < 10){;
-					foreach my $NAFF (@nonAffectedArray){
-						if ($finalSortData[$dicoColumnNbr{"Genotype-".$NAFF}] eq "1/1"){
-							$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
-							last;
+		}elsif (defined $penalizeAffected){
+	       		if (@affectedArray){
+				foreach my $AFF (@affectedArray){
+					if ($finalSortData[$dicoColumnNbr{"Genotype-".$AFF}] eq "0/0"){
+						$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
+						last;
+					}
+				}
+				if ( scalar  @nonAffectedArray > 0){
+					if ($finalSortData[$dicoColumnNbr{'MPA_ranking'}]   < 10){;
+						foreach my $NAFF (@nonAffectedArray){
+							if ($finalSortData[$dicoColumnNbr{"Genotype-".$NAFF}] eq "1/1"){
+								$finalSortData[$dicoColumnNbr{'MPA_ranking'}]   += 100;
+								last;
+							}
 						}
 					}
 				}
 			}
 		}
-		
 
 
 
@@ -3144,7 +3160,15 @@ filter = function  (evt, cat) {
 
 #METADATA
 $vcfHeader =~ s/[<>]//g;
-my $metadata = "<div class=\"META\"><b>Arguments:</b><br>".$achabArg."<br><br><br><b>VCF Header:</b><br>".$vcfHeader."</div>\n";
+# removed david 20240426
+# my $metadata = "<div class=\"META\"><b>Arguments:</b><br>".$achabArg."<br><br><br><b>VCF Header:</b><br>".$vcfHeader."</div>\n";
+my $metadata = "<div class=\"META\"><b>Arguments:</b><br/>".$achabArg."<br/><br/><br/><b>VCF Header:</b><br/>".$vcfHeader;
+if (%hashIDSNP){
+	foreach my $snp (keys %hashIDSNP){
+		$metadata .=  "<br/>".$snp.": ".$hashIDSNP{$snp}
+	}
+}
+$metadata .= "</div>\n";
 
 
 #table and columns names
@@ -3555,11 +3579,22 @@ $metadataLine ++;
 $worksheetMETA->write($metadataLine , 0, $achabArg );
 $metadataLine ++;
 
+
 # write IDSNP
-if (defined $dicoColumnNbr{'ID'}){
-	$worksheetMETA->write( $metadataLine, 0, $hashIDSNP{$finalSortData[$dicoColumnNbr{'ID'}]} );
-	$metadataLine ++;
+if (%hashIDSNP){
+	foreach my $snp (keys %hashIDSNP){
+		$worksheetMETA->write( $metadataLine, 0, $snp.": ".$hashIDSNP{$snp} );
+		$metadataLine ++;
+	}
 }
+
+
+#removed by david 20240425
+# write IDSNP
+#if (defined $dicoColumnNbr{'ID'}){
+#	$worksheetMETA->write( $metadataLine, 0, $hashIDSNP{$finalSortData[$dicoColumnNbr{'ID'}]} );
+#	$metadataLine ++;
+#}
 
 #write top 100 genes scored by phenolyzer
 if (%phenolyzerGene){
