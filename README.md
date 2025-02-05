@@ -201,6 +201,7 @@ Command line to use Captain ACHAB
                         --filterCustomVCFRegex <string pattern used as regex to search for a specific field to filter customVCF (default key of info field: 'found=')  >
                         --addCustomVCFRegex (customVCF field matched with customVCFRegex will be added in a new column - it requires customVCF option -  default regex is 'found=')
                         --pooledSamples <comma separated list of samples that are pooled (it will convert 0/0 genotype into 0/1 if at least 1 read support ALT base and it will flag cell in yellow, e.g. parents pool in trio context)  >
+                        --IDSNP <comma separated list of rs ID for identity monitoring (it will convert 0/0 genotype into 0/1 if at least 1 read support ALT base and it will flag cell in yellow, e.g. rs4889990,rs2075559)  >
                         --sampleSubset <comma separated list of samples only processed by Achab to the output>
                         --addCaseDepth (case Depth will be added in a new column)
                         --addCaseAB (case Allelic Balance will be added in a new column)
@@ -208,12 +209,14 @@ Command line to use Captain ACHAB
                         --poorCoverageFile <poor Coverage File (it will annotate OMIM genes if present in 4th column -requires OMIM genemap2 File- and create an excel file )>
                         --genemap2File <OMIM genemap2 file (it will help to annotate OMIM genes in poor coverage file )>
                         --skipCaseWT (only if trio mode is activated or in duo context (case and dad or mum must ne specified), it will skip variant if case genotype is 0/0 )
+                        --hideACMG (ACMG tab will be empty but information will be reported in the gene comment)
                         --gnomadGenome <comma separated list of gnomad genome annotation fields that will be displayed as gnomAD comments. First field of the list will be filtered regarding to popFreqThr argument. (default fields are hard-coded gnomAD_genome_ALL like)  > 
                         --gnomadExome <comma separated list of gnomad exome annotation fields that will be displayed as gnomAD comments. (default fields are hard-coded gnomAD_exome_ALL like) >
                         --hideACMG (ACMG tab will be empty but information will be reported in the gene comment)
                         --MDAPIkey <Path to File containing only MobiDetails API key (default file is MD.apikey in the achab folder, default build is hg19, but vcf header is parsed to check if hg38 and correct url ) >
                         --gnomAD_nhomalt < File containing gnomAD nhomalt values (number of homozygous individuals), values are added to gnomAD comments tabulated format=  chr,pos,ref,alt,nb_homozygous_individuals,allele number >
                         --maxCohortGT < In cohort/strangers mode (no trio, no affected), integer max number of individuals that share the same genotype (defaut = 1) >
+                        --penalizeAffected < Penalize ranking of case and affected with GT 0/0 , non-affected with GT 1/1 (default = don't penalize) >
                         --help (print this command usage)
 
 
