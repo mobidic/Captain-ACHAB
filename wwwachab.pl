@@ -1101,7 +1101,7 @@ if (-z $mdAPIkey){
 			if ($md_line eq ""){
 				$mdAPIkey = "";
 			}else{
-				$mdAPIkey = "https://mobidetails.iurc.montp.inserm.fr/MD/api/variant/create_vcf_str?genome_version=".$build."&api_key=".$md_line."&vcf_str=";
+				$mdAPIkey = "https://mobidetails.chu-montpellier.fr/api/variant/create_vcf_str?genome_version=".$build."&api_key=".$md_line."&vcf_str=";
 			}
 		}
 	}
@@ -2642,7 +2642,7 @@ while( <VCF> ){
 		if ($mdAPIkey ne ""){
 			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'MDurl'} = $mdAPIkey.$finalSortData[$dicoColumnNbr{'#CHROMPOSREFALT'}];
 		}else{
-			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'MDurl'} = "https://mobidetails.iurc.montp.inserm.fr/MD/vars/".$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}];
+			$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'MDurl'} = "https://mobidetails.chu-montpellier.fr/vars/".$finalSortData[$dicoColumnNbr{'Gene.'.$refGene}];
 		}	
 		$hashFinalSortData{$finalSortData[$dicoColumnNbr{'MPA_ranking'}]}{$variantID}{'Franklinurl'} = $franklinURL.$finalSortData[$dicoColumnNbr{'#CHROMPOSREFALT'}]."-".$build;
 		
