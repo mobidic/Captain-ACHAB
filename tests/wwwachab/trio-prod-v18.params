@@ -1,0 +1,28 @@
+--vcf /mnt/chu-ngs/Labos/UMAI/Run_Exomes/DIAGNOSTIC/Rapid_Exome/FE037_231009/casIndex/CSG235316/VCFs/CSG235316.mpa.vcf
+--outDir ./out-Achab
+--outPrefix sample
+--case CSG235316
+--dad CSG235318
+--mum CSG235317
+--newHope
+--candidates /mnt/Bioinfo/References/refData/intervals/GeneListUMAIglobal2024.txt_HGNC_Checked.txt
+--phenolyzerFile /mnt/chu-ngs/Labos/UMAI/Run_Exomes/DIAGNOSTIC/Rapid_Exome/FE037_231009/casIndex/CSG235316/VCFs/CSG235316.predicted_gene_scores
+--popFreqThr 0.012
+--gnomAD_nhomalt /mnt/chu-ngs/Labos/Cyto/QUALIF/NHOMALT/v2.1.1.exomes_nhomalt0.bed
+--filterList PASS
+--customVCF /mnt/Bioinfo/UMAI/DI/ALL_VCF/all_ExDI.norm.vcf
+--mozaicRate 0.2
+--mozaicDP 5
+--customInfoList AAChange.refGeneWithVer,GeneDetail.refGeneWithVer,regsnp_fpr,regsnp_disease,regsnp_splicing_site
+--filterCustomVCF 10
+--filterCustomVCFRegex HTZ=
+--addCustomVCFRegex
+--pooledSamples CSG235316,CSG235318,CSG235317
+--affected CSG235316
+--IDSNP rs3738494,rs11059924,rs8017,rs1065483,rs1058018,rs1131620,rs2075144,rs3739160,rs2839181,rs11702450,rs6795772,rs352169,rs2231926,rs843345,rs456261
+--addCaseDepth
+--addCaseAB
+--poorCoverageFile /mnt/chu-ngs/Labos/UMAI/Run_Exomes/DIAGNOSTIC/Rapid_Exome/FE037_231009/casIndex/CSG235316/Metrix/coverage/CSG235316.PoorCoverage_extended.tsv
+--genemap2File /mnt/chu-ngs/refData/Annotations/OMIM/genemap2_2023-04-14.txt
+--skipCaseWT
+--hideACMG

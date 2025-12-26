@@ -1,0 +1,24 @@
+--vcf /mnt/chu-ngs/NEXTSEQ/runs/721028_NB501631_0007_AAAOOOPPPY/out-Exome/casIndex/HG002-exomeTwist-chr22/VCFs/HG002-exomeTwist-chr22.mpa.vcf
+--outDir ./out-Achab
+--outPrefix sample
+--case HG002-exomeTwist-chr22
+--newHope
+--candidates /mnt/Bioinfo/References/refData/intervals/GeneListUMAIglobal2024.txt_HGNC_Checked.txt
+--phenolyzerFile /mnt/chu-ngs/NEXTSEQ/runs/721028_NB501631_0007_AAAOOOPPPY/out-Exome/casIndex/HG002-exomeTwist-chr22/VCFs/HG002-exomeTwist-chr22.predicted_gene_scores
+--popFreqThr 0.012
+--filterList PASS
+--customVCF /mnt/Bioinfo/UMAI/DI/ALL_VCF/all_ExDI.norm.vcf
+--mozaicRate 0.2
+--mozaicDP 5
+--customInfoList AAChange.refGeneWithVer,GeneDetail.refGeneWithVer,regsnp_fpr,regsnp_disease,regsnp_splicing_site
+--filterCustomVCF 10
+--filterCustomVCFRegex HTZ=
+--addCustomVCFRegex
+--pooledSamples HG002-exomeTwist-chr22,
+--affected HG002-exomeTwist-chr22
+--addCaseDepth
+--addCaseAB
+--poorCoverageFile /mnt/chu-ngs/NEXTSEQ/runs/721028_NB501631_0007_AAAOOOPPPY/out-Exome/casIndex/HG002-exomeTwist-chr22/Metrix/coverage/HG002-exomeTwist-chr22.PoorCoverage_extended.tsv
+--genemap2File /mnt/Bioinfo/Softs/src/OMIM/genemap2.txt
+--skipCaseWT
+--hideACMG

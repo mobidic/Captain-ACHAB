@@ -1,0 +1,82 @@
+## WARNING: md5 of EMPTY file = d41d8cd98f00b204e9800998ecf8427e
+
+- name: wwwAchab solo downsampled exome minimal
+  # Minimal parameters (= only VCF, 'newHope' mode)
+  tags:
+    - solo
+    - exome
+    - downsampled
+    - minimal
+  command: tests/wwwachab/run_and_specials.sh tests/wwwachab/exome-minimal.params
+  files:
+    - path: out-test/achab_sheets.tsv
+      md5sum: 0425cb6f1116d8f8beb0ae92c6caec0b
+    - path: out-ranked/variantS.md5
+      md5sum: 6753dc22657e38e7eab965dc8eb57c01
+    - path: out-REsorted/variantS.md5
+      md5sum: 2869975c2c2b50c85d3ba8880c96f13d
+
+- name: wwwAchab solo downsampled exome prod
+  # Full set of parameters used in prod for exome
+  tags:
+    - solo
+    - exome
+    - downsampled
+    - prod
+  command: tests/wwwachab/run_and_specials.sh tests/wwwachab/exome-prod.params
+  files:
+    - path: out-test/achab_sheets.tsv
+      md5sum: 3a05b59da58cf23353507755f0d9e638
+    - path: out-ranked/variantS.md5
+      md5sum: 1a20655ea62207bdb03ef7edf00ca928
+    - path: out-REsorted/variantS.md5
+      md5sum: a66fee07384a7c1621a05fd38d4fdd30
+
+- name: wwwAchab trio full exome prod V15
+  # Prod with V15 on full exome trio (FE037)
+  tags:
+    - trio
+    - exome
+    - full
+    - prodV15
+  command: tests/wwwachab/run_and_specials.sh tests/wwwachab/trio-prod-v15.params
+  files:
+    - path: out-test/achab_sheets.tsv
+      md5sum: 28459c1936a0dbb701ac09ed88281429
+    - path: out-ranked/variantS.md5
+      md5sum: 8346c29c780ae6b4e1e09692c8e6b578  # FIXME: Not 100% deterministic yet
+    - path: out-REsorted/variantS.md5
+      md5sum: 75249c3fff12f3bd8298cf8e9c7b4f5f
+
+- name: wwwAchab trio full exome prod V18
+  # Prod with V18 on full exome trio (FE037)
+  tags:
+    - trio
+    - exome
+    - full
+    - prodV18
+  command: tests/wwwachab/run_and_specials.sh tests/wwwachab/trio-prod-v18.params
+  files:
+    - path: out-test/achab_sheets.tsv
+      md5sum: 28459c1936a0dbb701ac09ed88281429
+    - path: out-ranked/variantS.md5
+      md5sum: 8346c29c780ae6b4e1e09692c8e6b578  # FIXME: Not 100% deterministic yet
+    - path: out-REsorted/variantS.md5
+      md5sum: 570710fd14ea55bc4890606553654b61  # More vars in DENOVO -> md5 differs from V15
+
+- name: wwwAchab trio full exome prod V19
+  # Prod with V19 on full exome trio (FE037)
+  tags:
+    - trio
+    - exome
+    - full
+    - prodV19
+  command: tests/wwwachab/run_and_specials.sh tests/wwwachab/trio-prod-v19.params
+  files:
+    - path: out-test/achab_sheets.tsv
+      md5sum: 28459c1936a0dbb701ac09ed88281429
+    - path: out-ranked/variantS.md5
+      md5sum: 8346c29c780ae6b4e1e09692c8e6b578  # FIXME: Not 100% deterministic yet
+    - path: out-REsorted/variantS.md5
+      md5sum: 9c8f2ad05bf01cac2139e6b87d95427e  # Clinvar_PATHO always included (even if high GnomAD) -> md5 differ from V18
+

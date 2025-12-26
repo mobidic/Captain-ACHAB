@@ -1,0 +1,4 @@
+--vcf /mnt/chu-ngs/NEXTSEQ/runs/721028_NB501631_0007_AAAOOOPPPY/out-Exome/casIndex/HG002-exomeTwist-chr22/VCFs/HG002-exomeTwist-chr22.mpa.vcf
+--outDir ./out-Achab
+--outPrefix sample
+--newHope

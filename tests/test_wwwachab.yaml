@@ -1,0 +1,34 @@
+## WARNING: md5 of EMPTY file = d41d8cd98f00b204e9800998ecf8427e
+
+- name: wwwAchab show version
+  tags:
+    - version
+  command: tests/wwwachab/run_and_specials.sh tests/wwwachab/version.params
+  files:
+    - path: log.out
+      md5sum: 55e45bb20f6d96b4712c20939dc2a75f
+
+- name: wwwAchab show help
+  tags:
+    - help
+  command: tests/wwwachab/run_and_specials.sh tests/wwwachab/help.params
+  files:
+    - path: log.out
+      md5sum: b690f9fc41fce965ec40025795c86e99
+
+- name: wwwAchab trio full exome prod
+  # Full set of parameters used in prod for exome (FE037)
+  tags:
+    - trio
+    - exome
+    - full
+    - prod
+  command: tests/wwwachab/run_and_specials.sh tests/wwwachab/trio-prod.params
+  files:
+    - path: out-test/achab_sheets.tsv
+      md5sum: 28459c1936a0dbb701ac09ed88281429
+    - path: out-ranked/variantS.md5
+      md5sum: 8346c29c780ae6b4e1e09692c8e6b578  # FIXME: Not 100% deterministic yet
+    - path: out-REsorted/variantS.md5
+      md5sum: 9c8f2ad05bf01cac2139e6b87d95427e
+
